@@ -36,6 +36,7 @@ ROOT = Path(__file__).resolve().parent.parent
 UA = {"User-Agent": "dixitnet-carto/1.0 (+https://github.com/dixitnet/carto)"}
 FILOSOFI_URL = "https://www.insee.fr/fr/statistiques/fichier/8735171/Filosofi2021_carreaux_1km_csv.zip"
 DEPS_URL = "https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements.geojson"
+PAYS_URL = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_10m_admin_0_countries.geojson"
 WFS_URL = "https://data.geopf.fr/wfs/ows"
 WFS_LAYERS = ["BDTOPO_V3:surface_hydrographique"]
 OVERPASS_URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"]
@@ -295,7 +296,58 @@ def hydro_wfs_grandes(seuil_m2=250000):
     return None, None
 
 
-def fond_france(cells, deps, avec_hydro=True):
+def hydro_wfs_tuiles(seuil_deg2=2.5e-5, budget_s=1200):
+    """Grandes surfaces en eau (environ 20 ha et plus), par tuiles d'un degré : le filtre spatial
+    passe avant le calcul d'aire, ce qui évite les délais d'attente du serveur."""
+    from shapely.ops import transform
+
+    couche, geom = WFS_LAYERS[0], "geometrie"
+    base = {"SERVICE": "WFS", "VERSION": "2.0.0", "REQUEST": "GetFeature", "TYPENAMES": couche,
+            "OUTPUTFORMAT": "application/json", "SRSNAME": "EPSG:4326", "COUNT": 5000}
+
+    def tuile(lon, lat, ordre):
+        a = (lon, lat, lon + 1, lat + 1) if ordre == "lonlat" else (lat, lon, lat + 1, lon + 1)
+        cql = f"BBOX({geom},{a[0]},{a[1]},{a[2]},{a[3]}) AND area({geom})>{seuil_deg2:.8f}"
+        r = requests.get(WFS_URL, params={**base, "CQL_FILTER": cql}, headers=UA, timeout=120)
+        r.raise_for_status()
+        return r.json().get("features", [])
+
+    try:
+        ordre = next((o for o in ("lonlat", "latlon") if tuile(-2, 47, o)), None)
+    except Exception as e:  # noqa: BLE001
+        log(f"  WFS par tuiles indisponible : {e}")
+        return None, None
+    if not ordre:
+        log("  WFS par tuiles : aucune surface sur la tuile test")
+        return None, None
+    log(f"  WFS par tuiles : ordre des axes {ordre}")
+    vus, geoms, echecs, t0 = set(), [], 0, time.time()
+    for lon in range(-6, 10):
+        for lat in range(41, 52):
+            if time.time() - t0 > budget_s:
+                echecs += 1
+                continue
+            try:
+                for f in tuile(lon, lat, ordre):
+                    cle = f.get("id") or f["properties"].get("cleabs")
+                    if cle in vus or not f.get("geometry"):
+                        continue
+                    vus.add(cle)
+                    geoms.append(shape(f["geometry"]))
+            except Exception:  # noqa: BLE001
+                echecs += 1
+    log(f"  WFS par tuiles : {len(geoms)} surfaces, {echecs} tuiles en échec, {time.time() - t0:.0f} s")
+    if not geoms:
+        return None, None
+    g = gpd.GeoSeries(geoms, crs=4326)
+    b = g.total_bounds
+    if b[0] > 35 and b[2] > 35:
+        g = gpd.GeoSeries([transform(lambda x, y, z=None: (y, x), q) for q in geoms], crs=4326)
+    note = "IGN BD TOPO, surfaces de 20 ha et plus" + (f" ({echecs} tuiles manquantes)" if echecs else "")
+    return g.to_crs(3035), note
+
+
+def fond_france(cells, deps, avec_hydro=True, pays_local=None):
     from rasterio import features
     from rasterio.transform import from_origin
 
@@ -317,14 +369,25 @@ def fond_france(cells, deps, avec_hydro=True):
         return r.reshape(ny, f, nx, f).mean(axis=(1, 3))[::-1]
 
     terre = part(list(metro.geometry))
+    # terres des pays voisins (Natural Earth), pour ne pas les confondre avec la mer
+    emerge = terre
+    try:
+        gj = json.loads(Path(pays_local).read_text()) if pays_local else get(PAYS_URL).json()
+        pays = gpd.GeoDataFrame.from_features(gj["features"], crs=4326)
+        w, s_, e, n = gpd.GeoSeries([box(x0, y0, x0 + nx * CELL, y0 + ny * CELL)], crs=3035).to_crs(4326).total_bounds
+        pays = pays.cx[w - 1:e + 1, s_ - 1:n + 1].clip(box(w - 1, s_ - 1, e + 1, n + 1)).to_crs(3035)
+        emerge = np.maximum(terre, part(list(pays.geometry.buffer(0))))
+        log(f"  pays voisins : {len(pays)} contours")
+    except Exception as ex:  # noqa: BLE001
+        log(f"  contours des pays voisins indisponibles : {ex}")
     eau_int = np.zeros_like(terre)
     source = "aucune (mer seulement)"
     if avec_hydro:
-        g, src = hydro_wfs_grandes()
+        g, src = hydro_wfs_tuiles()
         if g is not None:
             eau_int = part(list(g.buffer(0)))
             source = src
-    eau = np.clip((1 - terre) + np.minimum(eau_int, terre), 0, 1)
+    eau = np.clip((1 - emerge) + np.minimum(eau_int, terre), 0, 1)
     return {
         "x0": x0, "y0": y0, "nx": nx, "ny": ny,
         "eau": "".join(str(v) for v in np.rint(eau * 9).astype(int).ravel()),
@@ -333,7 +396,7 @@ def fond_france(cells, deps, avec_hydro=True):
     }
 
 
-def construire_france(df, deps, avec_hydro):
+def construire_france(df, deps, avec_hydro, pays_local=None):
     geo = next(c for c in df.columns if "cog" in c or "depcom" in c)
     codes = df[geo].fillna("").str.replace(r"[^0-9A-Za-z]", "", regex=True)
     cells = df[~codes.str.startswith("97")].copy()
@@ -346,7 +409,7 @@ def construire_france(df, deps, avec_hydro):
     cells = cells[cells["logements"] > 0]
     tot = {"n": int(len(cells)), "log": float(cells["logements"].sum()), "ind": float(cells["ind"].sum())}
     log(f"France métropolitaine : {tot['n']} carreaux habités, {tot['log']:.0f} logements, {tot['ind']:.0f} individus")
-    fond = fond_france(cells, deps, avec_hydro)
+    fond = fond_france(cells, deps, avec_hydro, pays_local)
     garde = cells[cells["logements"] >= 100]
     log(f"  {len(garde)} carreaux à 1 logement/ha ou plus")
     cols = [c for c in ["logements", "men", "ind", "i_est_1km", "men_mais", "men_surf"] if c in garde.columns]
@@ -376,12 +439,13 @@ def main():
     ap.add_argument("--filosofi")
     ap.add_argument("--deps")
     ap.add_argument("--no-hydro", action="store_true")
+    ap.add_argument("--pays")
     ap.add_argument("--france", action="store_true", help="France métropolitaine entière")
     a = ap.parse_args()
 
     df = lire_filosofi(a.filosofi)
     if a.france:
-        construire_france(df, charger_deps(a.deps), not a.no_hydro)
+        construire_france(df, charger_deps(a.deps), not a.no_hydro, a.pays)
         return
     cells, geo = filtrer_dept(df, a.dept)
     if cells.empty:
