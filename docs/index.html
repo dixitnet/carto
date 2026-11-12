@@ -48,6 +48,7 @@ canvas{display:block;width:100%;height:min(62vh,115vw);min-height:340px;touch-ac
 .leg .barre u{display:block;height:100%;border-radius:3px}
 .leg .pc{font-variant-numeric:tabular-nums;color:var(--ink2);text-align:right}
 .leg .off{opacity:.35}
+.degr{height:12px;border-radius:3px;background:linear-gradient(90deg,#f0a463,#d57221,#a24d11,#6c300a,#391803)}
 .fond{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:12px;color:var(--ink2)}
 .fond span{display:flex;align-items:center;gap:5px}.fond i{width:12px;height:12px;border-radius:2px;display:block;border:1px solid var(--line)}
 .note{font-size:12px;color:var(--muted);margin-top:8px}
@@ -91,22 +92,20 @@ canvas{display:block;width:100%;height:min(62vh,115vw);min-height:340px;touch-ac
     </div>
   </section>
   <section class="bloc">
-    <h2>Résidences principales par classe de densité</h2>
-    <div class="leg" id="leg"></div>
+    <h2>Légende</h2>
+    <div class="degr"></div><div class="echelle" style="margin:3px 0 0"><span>1</span><span>3</span><span>10</span><span>30</span><span>100 /ha</span></div>
     <div class="fond"><span><i style="background:var(--eau)"></i>Eau</span><span><i style="background:var(--hors)"></i>Hors département</span><span><i style="background:var(--exclu)"></i>Exclu : non habité ou sous le seuil</span></div>
     <div class="note" id="src"></div>
   </section>
 </main>
 <script>
 /*DONNEES*/
-const CLASSES=[0,1,2.5,5,10,25,50];
-const NOMS=["moins de 1","1 à 2,5","2,5 à 5","5 à 10","10 à 25","25 à 50","50 et plus"];
-const COUL=["#c2beb5","#f0a463","#e58a3c","#d57221","#a24d11","#6c300a","#391803"];
+const RAMPE=["#f0a463","#d57221","#a24d11","#6c300a","#391803"].map(h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)));
+const teinte=d=>{const t=Math.min(1,Math.max(0,Math.log10(d)/2))*(RAMPE.length-1),i=Math.min(RAMPE.length-2,Math.floor(t)),f=t-i;return "rgb("+RAMPE[i].map((v,k)=>Math.round(v+(RAMPE[i+1][k]-v)*f)).join(",")+")"};
 const VILLES={"44":[["Nantes",3449246,2746496],["Saint-Nazaire",3400918,2760553],["Châteaubriant",3470748,2799262],["Ancenis",3479834,2758452],["Pornic",3406421,2741824],["Clisson",3467344,2728845],["Blain",3437947,2777336],["Guérande",3385804,2769263],["Machecoul",3425232,2725029],["Nort-sur-Erdre",3457038,2770144],["Savenay",3422791,2766768],["Pontchâteau",3413100,2776910],["Vallet",3469814,2736875],["St-Philbert",3439688,2727414]]};
 const fmt=(v,d=0)=>v.toLocaleString("fr-FR",{maximumFractionDigits:d,minimumFractionDigits:d});
 const fd=v=>v>=10?fmt(v,0):v>=1?fmt(v,1):fmt(v,2);
 const $=id=>document.getElementById(id);
-const classe=d=>{let k=0;for(let i=1;i<CLASSES.length;i++)if(d>=CLASSES[i])k=i;return k};
 const PMAX=200,pos2dens=p=>Math.pow(10,p/100), dens2pos=d=>Math.round(Math.log10(d)*100);
 
 let histo,D,cells=[],grille,cv=$("carte"),ctx=cv.getContext("2d"),vue={k:1,ox:0,oy:0},sel=null,tot;
@@ -126,7 +125,7 @@ function init(d){
     if(I.dp>=0&&r[I.dp]!==1)continue;
     const log=r[I.log]||0; if(log<=0)continue;
     const o={x:r[I.x],y:r[I.y],log,men:r[I.men]||0,ind:r[I.ind]||0,imp:r[I.imp]===1,mais:I.mais>=0?r[I.mais]:null,surf:I.surf>=0?r[I.surf]:null,d:log/100};
-    o.c=classe(o.d);grille[o.y*d.fond.nx+o.x]=cells.length;cells.push(o);
+    o.c=teinte(o.d);grille[o.y*d.fond.nx+o.x]=cells.length;cells.push(o);
   }
   tot={n:cells.length,log:cells.reduce((s,o)=>s+o.log,0),ind:cells.reduce((s,o)=>s+o.ind,0)};
   $("src").textContent=d.meta.source+". Logements comptés : résidences principales des ménages fiscaux, hors résidences secondaires et logements vacants. Les carreaux à moins de 1 logement/ha sont toujours exclus. Eau : "+d.meta.source_eau+". Données du "+d.meta.genere_le+".";
@@ -162,15 +161,12 @@ function maj(){
   $("p-txt").textContent=s.smax===Infinity?"Plafond : aucun":"Plafond : moins de "+fd(s.smax)+" logements/ha ("+fmt(Math.round(s.smax*100))+" par carreau)";
   document.querySelectorAll("#pre button").forEach(b=>b.classList.toggle("on",Math.abs(dens2pos(+b.dataset.v)-$("curseur").value)<1));
   document.querySelectorAll("#histo u").forEach(u=>{const m=pos2dens((+u.dataset.i+0.5)*histo.pasB);u.classList.toggle("on",m>=s.smin&&m<s.smax)});
-  let n=0,log=0,ind=0,imp=0;const parC=CLASSES.map(()=>({log:0,ret:0}));
-  for(const o of cells){parC[o.c].log+=o.log;if(retenu(o,s)){n++;log+=o.log;ind+=o.ind;if(o.imp)imp++;parC[o.c].ret+=o.log}}
+  let n=0,log=0,ind=0,imp=0;
+  for(const o of cells){if(retenu(o,s)){n++;log+=o.log;ind+=o.ind;if(o.imp)imp++}}
   $("t-car").textContent=fmt(n);$("t-car2").textContent="sur "+fmt(tot.n)+" habités ("+fmt(100*n/tot.n)+" %)";
   $("t-log").textContent=fmt(Math.round(log));$("t-log2").textContent=fmt(100*log/tot.log,1)+" % du département";
   $("t-pop").textContent=fmt(Math.round(ind));$("t-pop2").textContent=fmt(100*ind/tot.ind,1)+" % du département";
   $("t-den").textContent=n?fd(log/n/100):"–";$("t-imp").textContent=n?fmt(100*imp/n)+" % de carreaux imputés":"";
-  const max=Math.max(...parC.map(p=>p.log));
-  $("leg").innerHTML=parC.map((p,i)=>{const off=p.ret===0?" off":"";
-    return `<i class="${off}" style="background:${COUL[i]}"></i><div class="${off}">${NOMS[i]} /ha<div class="barre"><u style="width:${100*p.log/max}%;background:${COUL[i]}"></u></div></div><div class="pc${off}">${fmt(100*p.log/tot.log,1)} %</div>`}).join("");
   dessiner();
 }
 
@@ -198,7 +194,7 @@ function dessiner(){
     if(e>0){ctx.globalAlpha=Math.min(1,e/8);ctx.fillStyle=cEau;ctx.fillRect(x,y,pas,pasY)}
     const n=grille[q];
     if(n>=0){const o=cells[n],ok=retenu(o,s);
-      if(ok||voir){ctx.globalAlpha=1;ctx.fillStyle=ok?COUL[o.c]:cExclu;ctx.fillRect(x,y,pas-jeu,pasY-jeu)}}
+      if(ok||voir){ctx.globalAlpha=1;ctx.fillStyle=ok?o.c:cExclu;ctx.fillRect(x,y,pas-jeu,pasY-jeu)}}
   }
   ctx.globalAlpha=1;
   if(sel){ctx.strokeStyle="#111";ctx.lineWidth=2;ctx.strokeRect(ecranX(sel.x)-1,ecranY(sel.y)-1,k+2,k+2)}
