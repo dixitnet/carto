@@ -58,8 +58,9 @@ canvas{display:block;width:100%;height:min(62vh,115vw);min-height:340px;touch-ac
 </head>
 <body>
 <header>
-  <h1>Carreaux habités – Loire-Atlantique</h1>
+  <h1 id="titre">Carreaux habités</h1>
   <div class="sub">Seuil de 1 à 100 résidences principales par hectare, carreaux de 1 km (100 ha)</div>
+  <div class="chips" id="terr" style="margin-top:8px"><button data-t="44">Loire-Atlantique</button><button data-t="fr">France métropolitaine</button></div>
 </header>
 <main>
   <section class="bloc">
@@ -105,7 +106,7 @@ canvas{display:block;width:100%;height:min(62vh,115vw);min-height:340px;touch-ac
     <h2>Légende</h2>
     
     <div class="sub" style="margin-bottom:6px">Carreaux habités retenus, selon la part de maisons</div><div class="leg" id="legm"></div>
-    <div class="fond"><span><i style="background:var(--exclu)"></i>Exclu : non habité ou hors seuils</span><span><i style="background:var(--eau)"></i>Eau</span><span><i style="background:var(--hors)"></i>Hors département</span></div>
+    <div class="fond"><span><i style="background:var(--exclu)"></i>Exclu : non habité ou hors seuils</span><span><i style="background:var(--eau)"></i>Eau</span><span><i style="background:var(--hors)"></i>Hors territoire</span></div>
     <div class="note" id="src"></div>
   </section>
 </main>
@@ -119,48 +120,72 @@ const fd=v=>v>=10?fmt(v,0):v>=1?fmt(v,1):fmt(v,2);
 const $=id=>document.getElementById(id);
 const PMAX=200,pos2dens=p=>Math.pow(10,p/100), dens2pos=d=>Math.round(Math.log10(d)*100);
 
-let histo,h2,D,cells=[],grille,cv=$("carte"),ctx=cv.getContext("2d"),vue={k:1,ox:0,oy:0},sel=null,tot;
-
-function charger(){
-  if(window.CARTO_DATA) return Promise.resolve(window.CARTO_DATA);
-  return fetch("data/44.json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw new Error("données absentes");return r.json()});
+let histo,h2,D,cells=[],grille,cv=$("carte"),ctx=cv.getContext("2d"),vue={k:1,ox:0,oy:0},sel=null,tot,fondImg=null;
+const TERR={"44":["Loire-Atlantique","data/44.json"],"fr":["France métropolitaine","data/fr.json"]},cache={};
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const territoire=()=>location.hash==="#france"?"fr":"44";
+function charger(t){
+  if(cache[t])return Promise.resolve(cache[t]);
+  if(window.CARTO_DATA&&window.CARTO_DATA[t])return Promise.resolve(cache[t]=window.CARTO_DATA[t]);
+  return fetch(TERR[t][1],{cache:"no-cache"}).then(r=>{if(!r.ok)throw new Error("données absentes");return r.json()}).then(d=>cache[t]=d);
 }
-charger().then(init).catch(e=>{$("etat").textContent="Données indisponibles pour l'instant ("+e.message+").";});
+function ouvrir(){
+  const t=territoire();$("etat").style.display="block";$("etat").textContent="Chargement des données…";
+  document.querySelectorAll("#terr button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  $("titre").textContent="Carreaux habités – "+TERR[t][0];
+  charger(t).then(d=>{if(territoire()===t)installer(d)}).catch(e=>{$("etat").textContent="Données indisponibles pour l'instant ("+e.message+")."});
+}
 
-function init(d){
-  D=d;$("etat").style.display="none";
+function demarrer(){
+  document.querySelectorAll("#terr button").forEach(b=>b.onclick=()=>{location.hash=b.dataset.t==="fr"?"france":"loire-atlantique"});
+  window.addEventListener("hashchange",ouvrir);
+  const H=$("histo"),lire=e=>{const u=e.target.closest("u");if(!u||!histo){$("hlect").textContent=histo?histo.defaut:"";return}const i=+u.dataset.i;
+    $("hlect").textContent=fd(pos2dens(i*histo.pasB))+" à "+fd(pos2dens((i+1)*histo.pasB))+" /ha : "+fmt(histo.n[i])+" carreau"+(histo.n[i]>1?"x":"")};
+  H.addEventListener("pointermove",lire);H.addEventListener("pointerdown",lire);H.addEventListener("pointerleave",()=>{$("hlect").textContent=histo?histo.defaut:""});
+  const NB2=20;h2={n:new Array(NB2).fill(0),nb:NB2,sel:-1};
+  $("histo2").innerHTML=h2.n.map((v,i)=>`<u data-i="${i}"></u>`).join("")+'<span class="ymax" id="ymax2"></span>';
+  const lire2=e=>{const u=e.target.closest("u");h2.sel=u?+u.dataset.i:-1;lecture2()};
+  $("histo2").addEventListener("pointermove",lire2);$("histo2").addEventListener("pointerdown",lire2);$("histo2").addEventListener("pointerleave",()=>{h2.sel=-1;lecture2()});
+  for(const v of [0,25,50,60,70,80,90,95]){const b=document.createElement("button");b.textContent=v+" %";b.dataset.v=v;b.onclick=()=>{$("maisons").value=v;maj()};$("pre2").appendChild(b)}
+  for(const v of [1,2,3,5,10,25,50,100]){const b=document.createElement("button");b.textContent=fd(v);b.dataset.v=v;b.onclick=()=>{$("curseur").value=dens2pos(v);maj()};$("pre").appendChild(b)}
+  for(const id of ["curseur","plafond","plaf-on","voir-exclus","maisons"])$(id).addEventListener("input",()=>{if(D)maj()});
+  $("zp").onclick=()=>zoom(1.5);$("zm").onclick=()=>zoom(1/1.5);$("z0").onclick=()=>{if(D){cadrer();dessiner()}};
+  window.addEventListener("resize",()=>{if(D){taille();cadrer();dessiner()}});
+  gestes();ouvrir();
+}
+
+function installer(d){
+  D=d;cells=[];sel=null;fondImg=null;$("bulle").style.display="none";$("etat").style.display="none";
   const c=d.colonnes,ix=n=>c.indexOf(n);
   const I={x:ix("ix"),y:ix("iy"),log:ix("logements"),men:ix("men"),ind:ix("ind"),imp:ix("i_est_1km"),dp:ix("dept_principal"),mais:ix("men_mais"),surf:ix("men_surf")};
   grille=new Int32Array(d.fond.nx*d.fond.ny).fill(-1);
   for(const r of d.carreaux){
     if(I.dp>=0&&r[I.dp]!==1)continue;
     const log=r[I.log]||0; if(log<=0)continue;
-    const o={x:r[I.x],y:r[I.y],log,men:r[I.men]||0,ind:r[I.ind]||0,imp:r[I.imp]===1,mais:I.mais>=0?r[I.mais]:null,pm:I.mais>=0&&r[I.men]?Math.min(100,100*(r[I.mais]||0)/r[I.men]):0,surf:I.surf>=0?r[I.surf]:null,d:log/100};
+    const o={x:r[I.x],y:r[I.y],log,men:r[I.men]||0,ind:r[I.ind]||0,imp:r[I.imp]===1,pm:I.mais>=0&&r[I.men]?Math.min(100,100*(r[I.mais]||0)/r[I.men]):0,surf:I.surf>=0?r[I.surf]:null,d:log/100};
     o.k=classeM(o.pm);grille[o.y*d.fond.nx+o.x]=cells.length;cells.push(o);
   }
-  tot={n:cells.length,log:cells.reduce((s,o)=>s+o.log,0),ind:cells.reduce((s,o)=>s+o.ind,0)};
+  tot=d.meta.totaux||{n:cells.length,log:cells.reduce((s,o)=>s+o.log,0),ind:cells.reduce((s,o)=>s+o.ind,0)};
   $("src").textContent=d.meta.source+". Logements comptés : résidences principales des ménages fiscaux, hors résidences secondaires et logements vacants. Les carreaux à moins de 1 logement/ha sont toujours exclus. Eau : "+d.meta.source_eau+". Données du "+d.meta.genere_le+".";
   const NB=40,pasB=PMAX/NB;histo={n:new Array(NB).fill(0),sous:0,pasB};
-  for(const o of cells){if(o.d<1){histo.sous++;continue}histo.n[Math.min(NB-1,Math.floor(Math.log10(o.d)*100/pasB))]++}
-  const hmax=Math.max(...histo.n),H=$("histo");
-  H.innerHTML=histo.n.map((v,i)=>`<u data-i="${i}" style="height:${v?Math.max(2,100*v/hmax):0}%"></u>`).join("")+`<span class="ymax">${fmt(hmax)} carreaux</span>`;
+  for(const o of cells){if(o.d<1)continue;histo.n[Math.min(NB-1,Math.floor(Math.log10(o.d)*100/pasB))]++}
+  histo.sous=tot.n-histo.n.reduce((a,b)=>a+b,0);
+  const hmax=Math.max(1,...histo.n);
+  $("histo").innerHTML=histo.n.map((v,i)=>`<u data-i="${i}" style="height:${v?Math.max(2,100*v/hmax):0}%"></u>`).join("")+`<span class="ymax">${fmt(hmax)} carreaux</span>`;
   histo.defaut="Nombre de carreaux par tranche de densité. "+fmt(histo.sous)+" carreaux sous 1 /ha, hors graphique.";
-  const lire=e=>{const u=e.target.closest("u");if(!u){$("hlect").textContent=histo.defaut;return}const i=+u.dataset.i;
-    $("hlect").textContent=fd(pos2dens(i*pasB))+" à "+fd(pos2dens((i+1)*pasB))+" /ha : "+fmt(histo.n[i])+" carreau"+(histo.n[i]>1?"x":"")};
-  H.addEventListener("pointermove",lire);H.addEventListener("pointerdown",lire);H.addEventListener("pointerleave",()=>{$("hlect").textContent=histo.defaut});
   $("hlect").textContent=histo.defaut;
-  const NB2=20;h2={n:new Array(NB2).fill(0),nb:NB2,sel:-1};
-  $("histo2").innerHTML=h2.n.map((v,i)=>`<u data-i="${i}"></u>`).join("")+'<span class="ymax" id="ymax2"></span>';
-  const lire2=e=>{const u=e.target.closest("u");h2.sel=u?+u.dataset.i:-1;lecture2()};
-  $("histo2").addEventListener("pointermove",lire2);$("histo2").addEventListener("pointerdown",lire2);$("histo2").addEventListener("pointerleave",()=>{h2.sel=-1;lecture2()});
-  for(const v of [0,25,50,60,70,80,90,95]){const b=document.createElement("button");b.textContent=v+" %";b.dataset.v=v;b.onclick=()=>{$("maisons").value=v;maj()};$("pre2").appendChild(b)}
-  $("maisons").addEventListener("input",maj);
-  const pre=$("pre");
-  for(const v of [1,2,3,5,10,25,50,100]){const b=document.createElement("button");b.textContent=fd(v);b.dataset.v=v;b.onclick=()=>{$("curseur").value=dens2pos(v);maj()};pre.appendChild(b)}
-  for(const id of ["curseur","plafond","plaf-on","voir-exclus"])$(id).addEventListener("input",maj);
-  $("zp").onclick=()=>zoom(1.5);$("zm").onclick=()=>zoom(1/1.5);$("z0").onclick=()=>{cadrer();dessiner()};
-  window.addEventListener("resize",()=>{taille();cadrer();dessiner()});
-  taille();cadrer();gestes();maj();
+  taille();cadrer();maj();
+}
+
+function fondImage(voir){
+  const f=D.fond,c=document.createElement("canvas");c.width=f.nx;c.height=f.ny;
+  const x=c.getContext("2d"),im=x.createImageData(f.nx,f.ny),p=im.data;
+  const rgb=n=>{const h=css(n);return [1,3,5].map(i=>parseInt(h.slice(i,i+2),16))};
+  const E=rgb("--eau"),T=rgb(voir?"--exclu":"--terre"),H=rgb("--hors");
+  for(let j=0;j<f.ny;j++)for(let i=0;i<f.nx;i++){
+    const q=j*f.nx+i,e=Math.min(1,(f.eau.charCodeAt(q)-48)/8),b=f.dept.charCodeAt(q)===49?T:H,o=((f.ny-1-j)*f.nx+i)*4;
+    p[o]=b[0]+(E[0]-b[0])*e;p[o+1]=b[1]+(E[1]-b[1])*e;p[o+2]=b[2]+(E[2]-b[2])*e;p[o+3]=255}
+  x.putImageData(im,0,0);fondImg=c;fondImg._voir=voir;
 }
 
 function seuils(){
@@ -189,8 +214,8 @@ function maj(){
   let n=0,log=0,ind=0,imp=0;const parK=CLM.map(()=>0);
   for(const o of cells){if(retenu(o,s)){parK[o.k]++;n++;log+=o.log;ind+=o.ind;if(o.imp)imp++}}
   $("t-car").textContent=fmt(n);$("t-car2").textContent="sur "+fmt(tot.n)+" habités ("+fmt(100*n/tot.n)+" %)";
-  $("t-log").textContent=fmt(Math.round(log));$("t-log2").textContent=fmt(100*log/tot.log,1)+" % du département";
-  $("t-pop").textContent=fmt(Math.round(ind));$("t-pop2").textContent=fmt(100*ind/tot.ind,1)+" % du département";
+  $("t-log").textContent=fmt(Math.round(log));$("t-log2").textContent=fmt(100*log/tot.log,1)+" % du territoire";
+  $("t-pop").textContent=fmt(Math.round(ind));$("t-pop2").textContent=fmt(100*ind/tot.ind,1)+" % du territoire";
   $("t-den").textContent=n?fd(log/n/100):"–";$("t-imp").textContent=n?fmt(100*imp/n)+" % de carreaux imputés":"";
   const mk=Math.max(1,...parK);
   $("legm").innerHTML=parK.map((v,i)=>`<i style="background:${COULM[i]}"></i><div>${NOMM[i]}<div class="barre"><u style="width:${100*v/mk}%;background:${COULM[i]}"></u></div></div><div class="pc">${fmt(v)}</div>`).join("");
@@ -209,33 +234,29 @@ const ecranX=ix=>vue.ox+ix*vue.k, ecranY=iy=>vue.oy+(D.fond.ny-1-iy)*vue.k;
 function dessiner(){
   if(!D)return;const f=D.fond,k=vue.k,dpr=cv._dpr,s=seuils(),voir=$("voir-exclus").checked;
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,cv._w,cv._h);
-  const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  const cEau=css("--eau"),cTerre=css("--terre"),cHors=css("--hors"),cExclu=css("--exclu"),cHab=css("--accent");
-  ctx.fillStyle=cHors;ctx.fillRect(0,0,cv._w,cv._h);
+  ctx.fillStyle=css("--hors");ctx.fillRect(0,0,cv._w,cv._h);
+  if(!fondImg||fondImg._voir!==voir)fondImage(voir);
+  ctx.imageSmoothingEnabled=false;ctx.drawImage(fondImg,vue.ox,vue.oy,f.nx*k,f.ny*k);
   const jeu=k>=7?1:0;
-  const i0=Math.max(0,Math.floor(-vue.ox/k)),i1=Math.min(f.nx-1,Math.ceil((cv._w-vue.ox)/k));
-  const j0=Math.max(0,f.ny-1-Math.ceil((cv._h-vue.oy)/k)),j1=Math.min(f.ny-1,f.ny-1-Math.floor(-vue.oy/k));
-  for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){
-    const q=j*f.nx+i,e=f.eau.charCodeAt(q)-48,x=Math.round(ecranX(i)),y=Math.round(ecranY(j)),pas=Math.round(ecranX(i+1))-x,pasY=Math.round(ecranY(j-1))-y;
-    ctx.globalAlpha=1;ctx.fillStyle=f.dept[q]==="1"?(voir?cExclu:cTerre):cHors;ctx.fillRect(x,y,pas,pasY);
-    if(e>0){ctx.globalAlpha=Math.min(1,e/8);ctx.fillStyle=cEau;ctx.fillRect(x,y,pas,pasY)}
-    const n=grille[q];
-    if(n>=0){const o=cells[n],ok=retenu(o,s);
-      if(ok||voir){ctx.globalAlpha=1;ctx.fillStyle=ok?COULM[o.k]:cExclu;ctx.fillRect(x,y,pas-jeu,pasY-jeu)}}
+  for(const o of cells){
+    if(!retenu(o,s))continue;
+    const x=Math.round(ecranX(o.x)),y=Math.round(ecranY(o.y));
+    if(x>cv._w||y>cv._h||x<-k-1||y<-k-1)continue;
+    const w=Math.max(1,Math.round(ecranX(o.x+1))-x-jeu),h=Math.max(1,Math.round(ecranY(o.y-1))-y-jeu);
+    ctx.fillStyle=COULM[o.k];ctx.fillRect(x,y,w,h);
   }
-  ctx.globalAlpha=1;
   if(sel){ctx.strokeStyle="#111";ctx.lineWidth=2;ctx.strokeRect(ecranX(sel.x)-1,ecranY(sel.y)-1,k+2,k+2)}
-  const v=VILLES[D.meta.dept]||[];ctx.font="600 12px system-ui,sans-serif";ctx.textAlign="center";ctx.lineJoin="round";
-  for(const [nom,X,Y] of v){const x=ecranX((X-f.x0)/1000),y=ecranY((Y-f.y0)/1000-1);
-    if(k<3.2&&!["Nantes","Saint-Nazaire","Châteaubriant","Ancenis","Pornic"].includes(nom))continue;
-    ctx.strokeStyle="rgba(255,255,255,.9)";ctx.lineWidth=3.5;ctx.strokeText(nom,x,y-6);ctx.fillStyle="#1f1f1c";ctx.fillText(nom,x,y-6)}
+  const fr=D.meta.dept==="fr",v=D.meta.villes||VILLES[D.meta.dept]||[];ctx.font="600 12px system-ui,sans-serif";ctx.textAlign="center";ctx.lineJoin="round";
+  v.forEach(([nom,X,Y],n)=>{const x=ecranX((X-f.x0)/1000),y=ecranY((Y-f.y0)/1000-1);
+    if(fr?(k<1.2&&n>=11):(k<3.2&&!["Nantes","Saint-Nazaire","Châteaubriant","Ancenis","Pornic"].includes(nom)))return;
+    ctx.strokeStyle="rgba(255,255,255,.9)";ctx.lineWidth=3.5;ctx.strokeText(nom,x,y-6);ctx.fillStyle="#1f1f1c";ctx.fillText(nom,x,y-6)});
   // échelle
-  const km=[1,2,5,10,20,50].find(n=>n*k>=50)||50;ctx.fillStyle="#1f1f1c";ctx.fillRect(12,14,km*k,3);ctx.textAlign="left";ctx.font="11px system-ui,sans-serif";
+  const km=[1,2,5,10,20,50,100,200].find(n=>n*k>=50)||200;ctx.fillStyle="#1f1f1c";ctx.fillRect(12,14,km*k,3);ctx.textAlign="left";ctx.font="11px system-ui,sans-serif";
   ctx.strokeStyle="rgba(255,255,255,.9)";ctx.lineWidth=3;ctx.strokeText(km+" km",12,30);ctx.fillText(km+" km",12,30);
 }
 
-function zoom(fac,cx=cv._w/2,cy=cv._h/2){const nk=Math.min(60,Math.max(1.2,vue.k*fac)),r=nk/vue.k;vue.ox=cx-(cx-vue.ox)*r;vue.oy=cy-(cy-vue.oy)*r;vue.k=nk;dessiner()}
-function celluleA(px,py){const f=D.fond,i=Math.floor((px-vue.ox)/vue.k),j=f.ny-1-Math.floor((py-vue.oy)/vue.k);
+function zoom(fac,cx=cv._w/2,cy=cv._h/2){const nk=Math.min(60,Math.max(0.2,vue.k*fac)),r=nk/vue.k;vue.ox=cx-(cx-vue.ox)*r;vue.oy=cy-(cy-vue.oy)*r;vue.k=nk;dessiner()}
+function celluleA(px,py){if(!D)return null;const f=D.fond,i=Math.floor((px-vue.ox)/vue.k),j=f.ny-1-Math.floor((py-vue.oy)/vue.k);
   if(i<0||j<0||i>=f.nx||j>=f.ny)return null;const n=grille[j*f.nx+i];return n>=0?cells[n]:null}
 function bulle(o){const b=$("bulle");sel=o;if(!o){b.style.display="none";dessiner();return}
   const s=seuils(),ok=retenu(o,s);
@@ -259,6 +280,7 @@ function gestes(){
   cv.addEventListener("pointerup",fin);cv.addEventListener("pointercancel",e=>{pts.delete(e.pointerId)});
   cv.addEventListener("wheel",e=>{e.preventDefault();const p=pos(e);zoom(e.deltaY<0?1.25:0.8,p[0],p[1])},{passive:false});
 }
+demarrer();
 </script>
 </body>
 </html>
