@@ -52,18 +52,18 @@ canvas{display:block;width:100%;height:min(62vh,115vw);min-height:340px;touch-ac
 <body>
 <header>
   <h1>Carreaux habités – Loire-Atlantique</h1>
-  <div class="sub">Test du seuil de densité de logements, carreaux de 1 km (100 ha)</div>
+  <div class="sub">Seuil de 1 à 100 résidences principales par hectare, carreaux de 1 km (100 ha)</div>
 </header>
 <main>
   <section class="bloc">
     <h2>Seuil minimal</h2>
     <div class="seuil"><span id="s-ha"></span><small id="s-car"></small></div>
-    <input type="range" id="curseur" min="0" max="400" step="1" value="200" aria-label="Seuil de logements par hectare">
-    <div class="echelle"><span>0,01</span><span>0,1</span><span>1</span><span>10</span><span>100 /ha</span></div>
+    <input type="range" id="curseur" min="0" max="200" step="1" value="0" aria-label="Seuil de résidences principales par hectare">
+    <div class="echelle"><span>1</span><span>3</span><span>10</span><span>30</span><span>100 et + /ha</span></div>
     <div class="chips" id="pre"></div>
     <label class="opt"><input type="checkbox" id="plaf-on"> Ajouter un plafond (écarter le dense)</label>
     <div id="plaf-bloc" style="display:none">
-      <input type="range" id="plafond" min="0" max="400" step="1" value="330" aria-label="Plafond de logements par hectare">
+      <input type="range" id="plafond" min="0" max="200" step="1" value="140" aria-label="Plafond de résidences principales par hectare">
       <div class="sub" id="p-txt"></div>
     </div>
     <label class="opt"><input type="checkbox" id="voir-exclus" checked> Afficher les carreaux exclus en gris</label>
@@ -78,29 +78,29 @@ canvas{display:block;width:100%;height:min(62vh,115vw);min-height:340px;touch-ac
     <h2>Ce que retient le seuil</h2>
     <div class="tuiles">
       <div class="tuile"><b id="t-car"></b><span>carreaux retenus</span><em id="t-car2"></em></div>
-      <div class="tuile"><b id="t-log"></b><span>logements retenus</span><em id="t-log2"></em></div>
+      <div class="tuile"><b id="t-log"></b><span>résidences principales</span><em id="t-log2"></em></div>
       <div class="tuile"><b id="t-pop"></b><span>habitants</span><em id="t-pop2"></em></div>
       <div class="tuile"><b id="t-den"></b><span>logements/ha en moyenne</span><em id="t-imp"></em></div>
     </div>
   </section>
   <section class="bloc">
-    <h2>Logements par classe de densité</h2>
+    <h2>Résidences principales par classe de densité</h2>
     <div class="leg" id="leg"></div>
-    <div class="fond"><span><i style="background:var(--eau)"></i>Eau</span><span><i style="background:var(--terre)"></i>Non habité</span><span><i style="background:var(--hors)"></i>Hors département</span><span><i style="background:var(--exclu)"></i>Exclu par le seuil</span></div>
+    <div class="fond"><span><i style="background:var(--eau)"></i>Eau</span><span><i style="background:var(--terre)"></i>Non habité</span><span><i style="background:var(--hors)"></i>Hors département</span><span><i style="background:var(--exclu)"></i>Exclu (dont moins de 1 /ha)</span></div>
     <div class="note" id="src"></div>
   </section>
 </main>
 <script>
 /*DONNEES*/
-const CLASSES=[0,0.1,0.25,0.5,1,2.5,5,10,25];
-const NOMS=["moins de 0,1","0,1 à 0,25","0,25 à 0,5","0,5 à 1","1 à 2,5","2,5 à 5","5 à 10","10 à 25","25 et plus"];
-const COUL=["#f0a463","#e58a3c","#d57221","#bd5e16","#a24d11","#873e0d","#6c300a","#512306","#391803"];
+const CLASSES=[0,1,2.5,5,10,25,50];
+const NOMS=["moins de 1","1 à 2,5","2,5 à 5","5 à 10","10 à 25","25 à 50","50 et plus"];
+const COUL=["#c2beb5","#f0a463","#e58a3c","#d57221","#a24d11","#6c300a","#391803"];
 const VILLES={"44":[["Nantes",3449246,2746496],["Saint-Nazaire",3400918,2760553],["Châteaubriant",3470748,2799262],["Ancenis",3479834,2758452],["Pornic",3406421,2741824],["Clisson",3467344,2728845],["Blain",3437947,2777336],["Guérande",3385804,2769263],["Machecoul",3425232,2725029],["Nort-sur-Erdre",3457038,2770144],["Savenay",3422791,2766768],["Pontchâteau",3413100,2776910],["Vallet",3469814,2736875],["St-Philbert",3439688,2727414]]};
 const fmt=(v,d=0)=>v.toLocaleString("fr-FR",{maximumFractionDigits:d,minimumFractionDigits:d});
 const fd=v=>v>=10?fmt(v,0):v>=1?fmt(v,1):fmt(v,2);
 const $=id=>document.getElementById(id);
 const classe=d=>{let k=0;for(let i=1;i<CLASSES.length;i++)if(d>=CLASSES[i])k=i;return k};
-const pos2dens=p=>Math.pow(10,-2+p/100), dens2pos=d=>Math.round((Math.log10(d)+2)*100);
+const PMAX=200,pos2dens=p=>Math.pow(10,p/100), dens2pos=d=>Math.round(Math.log10(d)*100);
 
 let D,cells=[],grille,cv=$("carte"),ctx=cv.getContext("2d"),vue={k:1,ox:0,oy:0},sel=null,tot;
 
@@ -122,9 +122,9 @@ function init(d){
     o.c=classe(o.d);grille[o.y*d.fond.nx+o.x]=cells.length;cells.push(o);
   }
   tot={n:cells.length,log:cells.reduce((s,o)=>s+o.log,0),ind:cells.reduce((s,o)=>s+o.ind,0)};
-  $("src").textContent=d.meta.source+". Logements = "+d.meta.definition_logements+" : résidences principales des ménages fiscaux, hors résidences secondaires et logements vacants. Eau : "+d.meta.source_eau+". Données du "+d.meta.genere_le+".";
+  $("src").textContent=d.meta.source+". Logements comptés : résidences principales des ménages fiscaux, hors résidences secondaires et logements vacants. Les carreaux à moins de 1 logement/ha sont toujours exclus. Eau : "+d.meta.source_eau+". Données du "+d.meta.genere_le+".";
   const pre=$("pre");
-  for(const v of [0.1,0.25,0.5,1,2,5,10,25,100]){const b=document.createElement("button");b.textContent=fd(v);b.dataset.v=v;b.onclick=()=>{$("curseur").value=dens2pos(v);maj()};pre.appendChild(b)}
+  for(const v of [1,2,3,5,10,25,50,100]){const b=document.createElement("button");b.textContent=fd(v);b.dataset.v=v;b.onclick=()=>{$("curseur").value=dens2pos(v);maj()};pre.appendChild(b)}
   for(const id of ["curseur","plafond","plaf-on","voir-exclus"])$(id).addEventListener("input",maj);
   $("zp").onclick=()=>zoom(1.5);$("zm").onclick=()=>zoom(1/1.5);$("z0").onclick=()=>{cadrer();dessiner()};
   window.addEventListener("resize",()=>{taille();cadrer();dessiner()});
@@ -134,14 +134,14 @@ function init(d){
 function seuils(){
   const smin=pos2dens(+$("curseur").value);
   const on=$("plaf-on").checked,pv=+$("plafond").value;
-  return {smin,smax:on&&pv<400?pos2dens(pv):Infinity,on};
+  return {smin,smax:on&&pv<PMAX?pos2dens(pv):Infinity,on};
 }
 const retenu=(o,s)=>o.d>=s.smin&&o.d<s.smax;
 
 function maj(){
   const s=seuils();
   $("s-ha").textContent="≥ "+fd(s.smin)+" logement"+(s.smin>=2?"s":"")+" par hectare";
-  $("s-car").textContent="soit au moins "+fmt(Math.round(s.smin*100))+" logement"+(s.smin*100>=2?"s":"")+" par carreau de 1 km";
+  $("s-car").textContent="soit au moins "+fmt(Math.round(s.smin*100))+" résidences principales par carreau de 1 km";
   $("plaf-bloc").style.display=s.on?"block":"none";
   $("p-txt").textContent=s.smax===Infinity?"Plafond : aucun":"Plafond : moins de "+fd(s.smax)+" logements/ha ("+fmt(Math.round(s.smax*100))+" par carreau)";
   document.querySelectorAll("#pre button").forEach(b=>b.classList.toggle("on",Math.abs(dens2pos(+b.dataset.v)-$("curseur").value)<1));
@@ -200,7 +200,7 @@ function celluleA(px,py){const f=D.fond,i=Math.floor((px-vue.ox)/vue.k),j=f.ny-1
 function bulle(o){const b=$("bulle");sel=o;if(!o){b.style.display="none";dessiner();return}
   const s=seuils(),ok=retenu(o,s);
   b.innerHTML=`<b>${fd(o.d)} logements/ha</b> · ${ok?"retenu":"exclu"}<table>
-  <tr><td>Logements</td><td>${fmt(Math.round(o.log))}</td></tr><tr><td>Ménages</td><td>${fmt(Math.round(o.men))}</td></tr>
+  <tr><td>Résidences principales</td><td>${fmt(Math.round(o.log))}</td></tr><tr><td>Ménages</td><td>${fmt(Math.round(o.men))}</td></tr>
   <tr><td>Habitants</td><td>${fmt(Math.round(o.ind))}</td></tr>${o.mais!=null&&o.men?`<tr><td>Ménages en maison</td><td>${fmt(100*o.mais/o.men)} %</td></tr>`:""}
   ${o.surf!=null&&o.men?`<tr><td>Surface moyenne</td><td>${fmt(o.surf/o.men)} m²</td></tr>`:""}</table>${o.imp?'<div style="color:#8a8983;margin-top:3px">Valeurs imputées par l\'Insee (moins de 11 ménages)</div>':""}`;
   b.style.display="block";dessiner()}
