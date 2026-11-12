@@ -1,0 +1,32 @@
+name: Préparer les données
+on:
+  workflow_dispatch:
+    inputs:
+      dept:
+        description: Code du département
+        default: "44"
+  push:
+    branches: [main]
+    paths: ["scripts/**", ".github/workflows/donnees.yml"]
+permissions:
+  contents: write
+concurrency: donnees
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q -r scripts/requirements.txt
+      - run: python scripts/build.py --dept "${{ github.event.inputs.dept || '44' }}"
+      - name: Enregistrer les données
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data docs/data
+          git diff --cached --quiet || git commit -m "Données : mise à jour automatique"
+          git pull --rebase origin main
+          git push

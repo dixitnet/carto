@@ -1,0 +1,7 @@
+pandas
+pyarrow
+geopandas
+shapely>=2
+pyproj
+requests
+py7zr
