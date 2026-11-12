@@ -104,13 +104,16 @@ canvas{display:block;width:100%;height:min(62vh,115vw);min-height:340px;touch-ac
   <section class="bloc">
     <h2>Légende</h2>
     
-    <div class="fond" style="margin-top:0"><span><i style="background:var(--accent)"></i>Habité (retenu par les seuils)</span><span><i style="background:var(--exclu)"></i>Exclu : non habité ou hors seuils</span><span><i style="background:var(--eau)"></i>Eau</span><span><i style="background:var(--hors)"></i>Hors département</span></div>
+    <div class="sub" style="margin-bottom:6px">Carreaux habités retenus, selon la part de maisons</div><div class="leg" id="legm"></div>
+    <div class="fond"><span><i style="background:var(--exclu)"></i>Exclu : non habité ou hors seuils</span><span><i style="background:var(--eau)"></i>Eau</span><span><i style="background:var(--hors)"></i>Hors département</span></div>
     <div class="note" id="src"></div>
   </section>
 </main>
 <script>
 /*DONNEES*/
 const VILLES={"44":[["Nantes",3449246,2746496],["Saint-Nazaire",3400918,2760553],["Châteaubriant",3470748,2799262],["Ancenis",3479834,2758452],["Pornic",3406421,2741824],["Clisson",3467344,2728845],["Blain",3437947,2777336],["Guérande",3385804,2769263],["Machecoul",3425232,2725029],["Nort-sur-Erdre",3457038,2770144],["Savenay",3422791,2766768],["Pontchâteau",3413100,2776910],["Vallet",3469814,2736875],["St-Philbert",3439688,2727414]]};
+const CLM=[0,50,75,90,95],NOMM=["moins de 50 %","50 à 75 %","75 à 90 %","90 à 95 %","95 % et plus"],COULM=["#f0a463","#d57221","#a24d11","#6c300a","#391803"];
+const classeM=p=>{let k=0;for(let i=1;i<CLM.length;i++)if(p>=CLM[i])k=i;return k};
 const fmt=(v,d=0)=>v.toLocaleString("fr-FR",{maximumFractionDigits:d,minimumFractionDigits:d});
 const fd=v=>v>=10?fmt(v,0):v>=1?fmt(v,1):fmt(v,2);
 const $=id=>document.getElementById(id);
@@ -133,7 +136,7 @@ function init(d){
     if(I.dp>=0&&r[I.dp]!==1)continue;
     const log=r[I.log]||0; if(log<=0)continue;
     const o={x:r[I.x],y:r[I.y],log,men:r[I.men]||0,ind:r[I.ind]||0,imp:r[I.imp]===1,mais:I.mais>=0?r[I.mais]:null,pm:I.mais>=0&&r[I.men]?Math.min(100,100*(r[I.mais]||0)/r[I.men]):0,surf:I.surf>=0?r[I.surf]:null,d:log/100};
-    grille[o.y*d.fond.nx+o.x]=cells.length;cells.push(o);
+    o.k=classeM(o.pm);grille[o.y*d.fond.nx+o.x]=cells.length;cells.push(o);
   }
   tot={n:cells.length,log:cells.reduce((s,o)=>s+o.log,0),ind:cells.reduce((s,o)=>s+o.ind,0)};
   $("src").textContent=d.meta.source+". Logements comptés : résidences principales des ménages fiscaux, hors résidences secondaires et logements vacants. Les carreaux à moins de 1 logement/ha sont toujours exclus. Eau : "+d.meta.source_eau+". Données du "+d.meta.genere_le+".";
@@ -183,12 +186,14 @@ function maj(){
   const m2=Math.max(1,...h2.n);$("ymax2").textContent=fmt(m2)+" carreaux";
   document.querySelectorAll("#histo2 u").forEach(u=>{const i=+u.dataset.i,v=h2.n[i];u.style.height=(v?Math.max(2,100*v/m2):0)+"%";u.classList.toggle("on",(i+1)*(100/h2.nb)>s.pmin)});
   lecture2();
-  let n=0,log=0,ind=0,imp=0;
-  for(const o of cells){if(retenu(o,s)){n++;log+=o.log;ind+=o.ind;if(o.imp)imp++}}
+  let n=0,log=0,ind=0,imp=0;const parK=CLM.map(()=>0);
+  for(const o of cells){if(retenu(o,s)){parK[o.k]++;n++;log+=o.log;ind+=o.ind;if(o.imp)imp++}}
   $("t-car").textContent=fmt(n);$("t-car2").textContent="sur "+fmt(tot.n)+" habités ("+fmt(100*n/tot.n)+" %)";
   $("t-log").textContent=fmt(Math.round(log));$("t-log2").textContent=fmt(100*log/tot.log,1)+" % du département";
   $("t-pop").textContent=fmt(Math.round(ind));$("t-pop2").textContent=fmt(100*ind/tot.ind,1)+" % du département";
   $("t-den").textContent=n?fd(log/n/100):"–";$("t-imp").textContent=n?fmt(100*imp/n)+" % de carreaux imputés":"";
+  const mk=Math.max(1,...parK);
+  $("legm").innerHTML=parK.map((v,i)=>`<i style="background:${COULM[i]}"></i><div>${NOMM[i]}<div class="barre"><u style="width:${100*v/mk}%;background:${COULM[i]}"></u></div></div><div class="pc">${fmt(v)}</div>`).join("");
   dessiner();
 }
 
@@ -216,7 +221,7 @@ function dessiner(){
     if(e>0){ctx.globalAlpha=Math.min(1,e/8);ctx.fillStyle=cEau;ctx.fillRect(x,y,pas,pasY)}
     const n=grille[q];
     if(n>=0){const o=cells[n],ok=retenu(o,s);
-      if(ok||voir){ctx.globalAlpha=1;ctx.fillStyle=ok?cHab:cExclu;ctx.fillRect(x,y,pas-jeu,pasY-jeu)}}
+      if(ok||voir){ctx.globalAlpha=1;ctx.fillStyle=ok?COULM[o.k]:cExclu;ctx.fillRect(x,y,pas-jeu,pasY-jeu)}}
   }
   ctx.globalAlpha=1;
   if(sel){ctx.strokeStyle="#111";ctx.lineWidth=2;ctx.strokeRect(ecranX(sel.x)-1,ecranY(sel.y)-1,k+2,k+2)}
