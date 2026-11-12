@@ -112,7 +112,7 @@ canvas{display:block;width:100%;height:min(62vh,115vw);min-height:340px;touch-ac
 <script>
 /*DONNEES*/
 const VILLES={"44":[["Nantes",3449246,2746496],["Saint-Nazaire",3400918,2760553],["Châteaubriant",3470748,2799262],["Ancenis",3479834,2758452],["Pornic",3406421,2741824],["Clisson",3467344,2728845],["Blain",3437947,2777336],["Guérande",3385804,2769263],["Machecoul",3425232,2725029],["Nort-sur-Erdre",3457038,2770144],["Savenay",3422791,2766768],["Pontchâteau",3413100,2776910],["Vallet",3469814,2736875],["St-Philbert",3439688,2727414]]};
-const CLM=[0,50,75,90,95],NOMM=["moins de 50 %","50 à 75 %","75 à 90 %","90 à 95 %","95 % et plus"],COULM=["#f0a463","#d57221","#a24d11","#6c300a","#391803"];
+const CLM=[0,25,50,75],NOMM=["0 à 25 %","25 à 50 %","50 à 75 %","75 à 100 %"],COULM=["#512306","#a24d11","#d57221","#f0a463"];
 const classeM=p=>{let k=0;for(let i=1;i<CLM.length;i++)if(p>=CLM[i])k=i;return k};
 const fmt=(v,d=0)=>v.toLocaleString("fr-FR",{maximumFractionDigits:d,minimumFractionDigits:d});
 const fd=v=>v>=10?fmt(v,0):v>=1?fmt(v,1):fmt(v,2);
