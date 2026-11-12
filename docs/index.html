@@ -13,7 +13,7 @@ header{padding:14px 16px 6px}
 h1{font-size:19px;margin:0 0 2px;font-weight:650}
 .sub{color:var(--ink2);font-size:13px}
 main{display:grid;gap:12px;padding:8px 16px 24px;grid-template-columns:1fr}
-@media(min-width:900px){main{grid-template-columns:340px 1fr;align-items:start}#carte-bloc{grid-column:2;grid-row:1 / span 4}}
+@media(min-width:900px){main{grid-template-columns:340px 1fr;align-items:start}#carte-bloc{grid-column:2;grid-row:1 / span 5}}
 .bloc{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
 .bloc h2{font-size:13px;margin:0 0 8px;color:var(--ink2);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 .seuil{font-size:22px;font-weight:650;line-height:1.15}
@@ -23,6 +23,7 @@ input[type=range]{width:100%;margin:10px 0 4px;accent-color:var(--accent);height
 .histo u{flex:1;display:block;border-radius:2px 2px 0 0;min-height:1px;background:var(--exclu)}
 .histo u.on{background:var(--accent)}
 .histo .ymax{position:absolute;right:0;top:-2px;font-size:11px;color:var(--muted)}
+#histo2 .ymax{right:auto;left:0}
 .hlect{font-size:12px;color:var(--ink2);min-height:17px;margin-top:4px}
 .echelle{margin:0 8px;display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
@@ -76,6 +77,15 @@ canvas{display:block;width:100%;height:min(62vh,115vw);min-height:340px;touch-ac
     </div>
     <label class="opt"><input type="checkbox" id="voir-exclus" checked> Afficher les carreaux exclus en gris (non habités compris)</label>
   </section>
+  <section class="bloc">
+    <h2>Part de maisons</h2>
+    <div class="seuil"><span id="m-txt"></span><small>part des ménages vivant en maison, par carreau</small></div>
+    <input type="range" id="maisons" min="0" max="100" step="1" value="0" aria-label="Part minimale de maisons">
+    <div class="histo" id="histo2" role="img" aria-label="Nombre de carreaux selon la part de maisons"></div>
+    <div class="echelle"><span>0</span><span>25</span><span>50</span><span>75</span><span>100 %</span></div>
+    <div class="hlect" id="hlect2"></div>
+    <div class="chips" id="pre2"></div>
+  </section>
   <section class="bloc" id="carte-bloc">
     <canvas id="carte"></canvas>
     <div class="zoom"><button id="zp" aria-label="Zoomer">+</button><button id="zm" aria-label="Dézoomer">−</button><button id="z0" aria-label="Vue d'ensemble">⤢</button></div>
@@ -83,9 +93,9 @@ canvas{display:block;width:100%;height:min(62vh,115vw);min-height:340px;touch-ac
     <div id="etat">Chargement des données…</div>
   </section>
   <section class="bloc">
-    <h2>Ce que retient le seuil</h2>
+    <h2>Ce que retiennent les seuils</h2>
     <div class="tuiles">
-      <div class="tuile"><b id="t-car"></b><span>carreaux retenus</span><em id="t-car2"></em></div>
+      <div class="tuile"><b id="t-car"></b><span>carreaux habités retenus</span><em id="t-car2"></em></div>
       <div class="tuile"><b id="t-log"></b><span>résidences principales</span><em id="t-log2"></em></div>
       <div class="tuile"><b id="t-pop"></b><span>habitants</span><em id="t-pop2"></em></div>
       <div class="tuile"><b id="t-den"></b><span>logements/ha en moyenne</span><em id="t-imp"></em></div>
@@ -94,7 +104,7 @@ canvas{display:block;width:100%;height:min(62vh,115vw);min-height:340px;touch-ac
   <section class="bloc">
     <h2>Légende</h2>
     
-    <div class="fond" style="margin-top:0"><span><i style="background:var(--accent)"></i>Habité (retenu par le seuil)</span><span><i style="background:var(--exclu)"></i>Exclu : non habité ou sous le seuil</span><span><i style="background:var(--eau)"></i>Eau</span><span><i style="background:var(--hors)"></i>Hors département</span></div>
+    <div class="fond" style="margin-top:0"><span><i style="background:var(--accent)"></i>Habité (retenu par les seuils)</span><span><i style="background:var(--exclu)"></i>Exclu : non habité ou hors seuils</span><span><i style="background:var(--eau)"></i>Eau</span><span><i style="background:var(--hors)"></i>Hors département</span></div>
     <div class="note" id="src"></div>
   </section>
 </main>
@@ -106,7 +116,7 @@ const fd=v=>v>=10?fmt(v,0):v>=1?fmt(v,1):fmt(v,2);
 const $=id=>document.getElementById(id);
 const PMAX=200,pos2dens=p=>Math.pow(10,p/100), dens2pos=d=>Math.round(Math.log10(d)*100);
 
-let histo,D,cells=[],grille,cv=$("carte"),ctx=cv.getContext("2d"),vue={k:1,ox:0,oy:0},sel=null,tot;
+let histo,h2,D,cells=[],grille,cv=$("carte"),ctx=cv.getContext("2d"),vue={k:1,ox:0,oy:0},sel=null,tot;
 
 function charger(){
   if(window.CARTO_DATA) return Promise.resolve(window.CARTO_DATA);
@@ -122,7 +132,7 @@ function init(d){
   for(const r of d.carreaux){
     if(I.dp>=0&&r[I.dp]!==1)continue;
     const log=r[I.log]||0; if(log<=0)continue;
-    const o={x:r[I.x],y:r[I.y],log,men:r[I.men]||0,ind:r[I.ind]||0,imp:r[I.imp]===1,mais:I.mais>=0?r[I.mais]:null,surf:I.surf>=0?r[I.surf]:null,d:log/100};
+    const o={x:r[I.x],y:r[I.y],log,men:r[I.men]||0,ind:r[I.ind]||0,imp:r[I.imp]===1,mais:I.mais>=0?r[I.mais]:null,pm:I.mais>=0&&r[I.men]?Math.min(100,100*(r[I.mais]||0)/r[I.men]):0,surf:I.surf>=0?r[I.surf]:null,d:log/100};
     grille[o.y*d.fond.nx+o.x]=cells.length;cells.push(o);
   }
   tot={n:cells.length,log:cells.reduce((s,o)=>s+o.log,0),ind:cells.reduce((s,o)=>s+o.ind,0)};
@@ -136,6 +146,12 @@ function init(d){
     $("hlect").textContent=fd(pos2dens(i*pasB))+" à "+fd(pos2dens((i+1)*pasB))+" /ha : "+fmt(histo.n[i])+" carreau"+(histo.n[i]>1?"x":"")};
   H.addEventListener("pointermove",lire);H.addEventListener("pointerdown",lire);H.addEventListener("pointerleave",()=>{$("hlect").textContent=histo.defaut});
   $("hlect").textContent=histo.defaut;
+  const NB2=20;h2={n:new Array(NB2).fill(0),nb:NB2,sel:-1};
+  $("histo2").innerHTML=h2.n.map((v,i)=>`<u data-i="${i}"></u>`).join("")+'<span class="ymax" id="ymax2"></span>';
+  const lire2=e=>{const u=e.target.closest("u");h2.sel=u?+u.dataset.i:-1;lecture2()};
+  $("histo2").addEventListener("pointermove",lire2);$("histo2").addEventListener("pointerdown",lire2);$("histo2").addEventListener("pointerleave",()=>{h2.sel=-1;lecture2()});
+  for(const v of [0,25,50,60,70,80,90,95]){const b=document.createElement("button");b.textContent=v+" %";b.dataset.v=v;b.onclick=()=>{$("maisons").value=v;maj()};$("pre2").appendChild(b)}
+  $("maisons").addEventListener("input",maj);
   const pre=$("pre");
   for(const v of [1,2,3,5,10,25,50,100]){const b=document.createElement("button");b.textContent=fd(v);b.dataset.v=v;b.onclick=()=>{$("curseur").value=dens2pos(v);maj()};pre.appendChild(b)}
   for(const id of ["curseur","plafond","plaf-on","voir-exclus"])$(id).addEventListener("input",maj);
@@ -147,9 +163,11 @@ function init(d){
 function seuils(){
   const smin=pos2dens(+$("curseur").value);
   const on=$("plaf-on").checked,pv=+$("plafond").value;
-  return {smin,smax:on&&pv<PMAX?pos2dens(pv):Infinity,on};
+  return {smin,smax:on&&pv<PMAX?pos2dens(pv):Infinity,on,pmin:+$("maisons").value};
 }
-const retenu=(o,s)=>o.d>=s.smin&&o.d<s.smax;
+const dansDens=(o,s)=>o.d>=s.smin&&o.d<s.smax;
+const retenu=(o,s)=>dansDens(o,s)&&o.pm>=s.pmin;
+function lecture2(){const i=h2.sel,pas=100/h2.nb;$("hlect2").textContent=i<0?"Carreaux retenus par le seuil de densité, par tranche de 5 %.":fmt(i*pas)+" à "+fmt((i+1)*pas)+" % de maisons : "+fmt(h2.n[i])+" carreau"+(h2.n[i]>1?"x":"")}
 
 function maj(){
   const s=seuils();
@@ -159,6 +177,12 @@ function maj(){
   $("p-txt").textContent=s.smax===Infinity?"Plafond : aucun":"Plafond : moins de "+fd(s.smax)+" logements/ha ("+fmt(Math.round(s.smax*100))+" par carreau)";
   document.querySelectorAll("#pre button").forEach(b=>b.classList.toggle("on",Math.abs(dens2pos(+b.dataset.v)-$("curseur").value)<1));
   document.querySelectorAll("#histo u").forEach(u=>{const m=pos2dens((+u.dataset.i+0.5)*histo.pasB);u.classList.toggle("on",m>=s.smin&&m<s.smax)});
+  $("m-txt").textContent=s.pmin>0?"≥ "+s.pmin+" % de maisons":"Pas de filtre";
+  document.querySelectorAll("#pre2 button").forEach(b=>b.classList.toggle("on",+b.dataset.v===s.pmin));
+  h2.n.fill(0);for(const o of cells)if(dansDens(o,s))h2.n[Math.min(h2.nb-1,Math.floor(o.pm/(100/h2.nb)))]++;
+  const m2=Math.max(1,...h2.n);$("ymax2").textContent=fmt(m2)+" carreaux";
+  document.querySelectorAll("#histo2 u").forEach(u=>{const i=+u.dataset.i,v=h2.n[i];u.style.height=(v?Math.max(2,100*v/m2):0)+"%";u.classList.toggle("on",(i+1)*(100/h2.nb)>s.pmin)});
+  lecture2();
   let n=0,log=0,ind=0,imp=0;
   for(const o of cells){if(retenu(o,s)){n++;log+=o.log;ind+=o.ind;if(o.imp)imp++}}
   $("t-car").textContent=fmt(n);$("t-car2").textContent="sur "+fmt(tot.n)+" habités ("+fmt(100*n/tot.n)+" %)";
@@ -212,7 +236,7 @@ function bulle(o){const b=$("bulle");sel=o;if(!o){b.style.display="none";dessine
   const s=seuils(),ok=retenu(o,s);
   b.innerHTML=`<b>${fd(o.d)} logements/ha</b> · ${ok?"habité":"exclu"}<table>
   <tr><td>Résidences principales</td><td>${fmt(Math.round(o.log))}</td></tr><tr><td>Ménages</td><td>${fmt(Math.round(o.men))}</td></tr>
-  <tr><td>Habitants</td><td>${fmt(Math.round(o.ind))}</td></tr>${o.mais!=null&&o.men?`<tr><td>Ménages en maison</td><td>${fmt(100*o.mais/o.men)} %</td></tr>`:""}
+  <tr><td>Habitants</td><td>${fmt(Math.round(o.ind))}</td></tr><tr><td>Ménages en maison</td><td>${fmt(o.pm)} %</td></tr>
   ${o.surf!=null&&o.men?`<tr><td>Surface moyenne</td><td>${fmt(o.surf/o.men)} m²</td></tr>`:""}</table>${o.imp?'<div style="color:#8a8983;margin-top:3px">Valeurs imputées par l\'Insee (moins de 11 ménages)</div>':""}`;
   b.style.display="block";dessiner()}
 function gestes(){
