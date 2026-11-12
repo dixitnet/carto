@@ -93,15 +93,13 @@ canvas{display:block;width:100%;height:min(62vh,115vw);min-height:340px;touch-ac
   </section>
   <section class="bloc">
     <h2>Légende</h2>
-    <div class="degr"></div><div class="echelle" style="margin:3px 0 0"><span>1</span><span>3</span><span>10</span><span>30</span><span>100 /ha</span></div>
-    <div class="fond"><span><i style="background:var(--eau)"></i>Eau</span><span><i style="background:var(--hors)"></i>Hors département</span><span><i style="background:var(--exclu)"></i>Exclu : non habité ou sous le seuil</span></div>
+    
+    <div class="fond" style="margin-top:0"><span><i style="background:var(--accent)"></i>Habité (retenu par le seuil)</span><span><i style="background:var(--exclu)"></i>Exclu : non habité ou sous le seuil</span><span><i style="background:var(--eau)"></i>Eau</span><span><i style="background:var(--hors)"></i>Hors département</span></div>
     <div class="note" id="src"></div>
   </section>
 </main>
 <script>
 /*DONNEES*/
-const RAMPE=["#f0a463","#d57221","#a24d11","#6c300a","#391803"].map(h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)));
-const teinte=d=>{const t=Math.min(1,Math.max(0,Math.log10(d)/2))*(RAMPE.length-1),i=Math.min(RAMPE.length-2,Math.floor(t)),f=t-i;return "rgb("+RAMPE[i].map((v,k)=>Math.round(v+(RAMPE[i+1][k]-v)*f)).join(",")+")"};
 const VILLES={"44":[["Nantes",3449246,2746496],["Saint-Nazaire",3400918,2760553],["Châteaubriant",3470748,2799262],["Ancenis",3479834,2758452],["Pornic",3406421,2741824],["Clisson",3467344,2728845],["Blain",3437947,2777336],["Guérande",3385804,2769263],["Machecoul",3425232,2725029],["Nort-sur-Erdre",3457038,2770144],["Savenay",3422791,2766768],["Pontchâteau",3413100,2776910],["Vallet",3469814,2736875],["St-Philbert",3439688,2727414]]};
 const fmt=(v,d=0)=>v.toLocaleString("fr-FR",{maximumFractionDigits:d,minimumFractionDigits:d});
 const fd=v=>v>=10?fmt(v,0):v>=1?fmt(v,1):fmt(v,2);
@@ -125,7 +123,7 @@ function init(d){
     if(I.dp>=0&&r[I.dp]!==1)continue;
     const log=r[I.log]||0; if(log<=0)continue;
     const o={x:r[I.x],y:r[I.y],log,men:r[I.men]||0,ind:r[I.ind]||0,imp:r[I.imp]===1,mais:I.mais>=0?r[I.mais]:null,surf:I.surf>=0?r[I.surf]:null,d:log/100};
-    o.c=teinte(o.d);grille[o.y*d.fond.nx+o.x]=cells.length;cells.push(o);
+    grille[o.y*d.fond.nx+o.x]=cells.length;cells.push(o);
   }
   tot={n:cells.length,log:cells.reduce((s,o)=>s+o.log,0),ind:cells.reduce((s,o)=>s+o.ind,0)};
   $("src").textContent=d.meta.source+". Logements comptés : résidences principales des ménages fiscaux, hors résidences secondaires et logements vacants. Les carreaux à moins de 1 logement/ha sont toujours exclus. Eau : "+d.meta.source_eau+". Données du "+d.meta.genere_le+".";
@@ -183,7 +181,7 @@ function dessiner(){
   if(!D)return;const f=D.fond,k=vue.k,dpr=cv._dpr,s=seuils(),voir=$("voir-exclus").checked;
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,cv._w,cv._h);
   const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  const cEau=css("--eau"),cTerre=css("--terre"),cHors=css("--hors"),cExclu=css("--exclu");
+  const cEau=css("--eau"),cTerre=css("--terre"),cHors=css("--hors"),cExclu=css("--exclu"),cHab=css("--accent");
   ctx.fillStyle=cHors;ctx.fillRect(0,0,cv._w,cv._h);
   const jeu=k>=7?1:0;
   const i0=Math.max(0,Math.floor(-vue.ox/k)),i1=Math.min(f.nx-1,Math.ceil((cv._w-vue.ox)/k));
@@ -194,7 +192,7 @@ function dessiner(){
     if(e>0){ctx.globalAlpha=Math.min(1,e/8);ctx.fillStyle=cEau;ctx.fillRect(x,y,pas,pasY)}
     const n=grille[q];
     if(n>=0){const o=cells[n],ok=retenu(o,s);
-      if(ok||voir){ctx.globalAlpha=1;ctx.fillStyle=ok?o.c:cExclu;ctx.fillRect(x,y,pas-jeu,pasY-jeu)}}
+      if(ok||voir){ctx.globalAlpha=1;ctx.fillStyle=ok?cHab:cExclu;ctx.fillRect(x,y,pas-jeu,pasY-jeu)}}
   }
   ctx.globalAlpha=1;
   if(sel){ctx.strokeStyle="#111";ctx.lineWidth=2;ctx.strokeRect(ecranX(sel.x)-1,ecranY(sel.y)-1,k+2,k+2)}
@@ -212,7 +210,7 @@ function celluleA(px,py){const f=D.fond,i=Math.floor((px-vue.ox)/vue.k),j=f.ny-1
   if(i<0||j<0||i>=f.nx||j>=f.ny)return null;const n=grille[j*f.nx+i];return n>=0?cells[n]:null}
 function bulle(o){const b=$("bulle");sel=o;if(!o){b.style.display="none";dessiner();return}
   const s=seuils(),ok=retenu(o,s);
-  b.innerHTML=`<b>${fd(o.d)} logements/ha</b> · ${ok?"retenu":"exclu"}<table>
+  b.innerHTML=`<b>${fd(o.d)} logements/ha</b> · ${ok?"habité":"exclu"}<table>
   <tr><td>Résidences principales</td><td>${fmt(Math.round(o.log))}</td></tr><tr><td>Ménages</td><td>${fmt(Math.round(o.men))}</td></tr>
   <tr><td>Habitants</td><td>${fmt(Math.round(o.ind))}</td></tr>${o.mais!=null&&o.men?`<tr><td>Ménages en maison</td><td>${fmt(100*o.mais/o.men)} %</td></tr>`:""}
   ${o.surf!=null&&o.men?`<tr><td>Surface moyenne</td><td>${fmt(o.surf/o.men)} m²</td></tr>`:""}</table>${o.imp?'<div style="color:#8a8983;margin-top:3px">Valeurs imputées par l\'Insee (moins de 11 ménages)</div>':""}`;
