@@ -248,6 +248,127 @@ def fond_de_plan(cells, deps, dept, avec_hydro=True):
     }
 
 
+# ---------------------------------------------------------------- France entière
+VILLES_FR = {"Paris": (48.8566, 2.3522), "Lyon": (45.764, 4.8357), "Marseille": (43.2965, 5.3698),
+             "Toulouse": (43.6047, 1.4442), "Bordeaux": (44.8378, -0.5792), "Nantes": (47.2184, -1.5536),
+             "Lille": (50.6292, 3.0573), "Strasbourg": (48.5734, 7.7521), "Rennes": (48.1173, -1.6778),
+             "Nice": (43.7102, 7.262), "Montpellier": (43.6108, 3.8767), "Brest": (48.3904, -4.4861),
+             "Clermont-Fd": (45.7772, 3.087), "Dijon": (47.322, 5.0415), "Tours": (47.3941, 0.6848),
+             "Limoges": (45.8336, 1.2611), "Orléans": (47.9029, 1.9093), "Rouen": (49.4432, 1.0993),
+             "Caen": (49.1829, -0.3707), "Grenoble": (45.1885, 5.7245), "Nancy": (48.6921, 6.1844),
+             "Reims": (49.2583, 4.0317), "Ajaccio": (41.9192, 8.7386), "Perpignan": (42.6887, 2.8948),
+             "Pau": (43.2951, -0.3708), "Poitiers": (46.5802, 0.3404)}
+
+
+def hydro_wfs_grandes(seuil_m2=250000):
+    """Grandes surfaces en eau de la BD TOPO, France entière, filtrées côté serveur par leur aire."""
+    couche = WFS_LAYERS[0]
+    base = {"SERVICE": "WFS", "VERSION": "2.0.0", "REQUEST": "GetFeature", "TYPENAMES": couche,
+            "OUTPUTFORMAT": "application/json"}
+    try:
+        un = get(WFS_URL, params={**base, "COUNT": 1}, timeout=120).json()
+        f0 = un["features"][0]
+        geom = f0.get("geometry_name") or "geometrie"
+        crs = (un.get("crs") or {}).get("properties", {}).get("name", "")
+        log(f"  WFS : colonne géométrique « {geom} », crs « {crs} », attributs {list(f0['properties'])[:25]}")
+        for seuil, unite in ((seuil_m2, "m²"), (seuil_m2 / 1.0e10, "degrés²")):
+            geoms, debut = [], 0
+            while True:
+                params = {**base, "CQL_FILTER": f"area({geom})>{seuil:.10f}", "COUNT": 5000, "STARTINDEX": debut,
+                          "SRSNAME": "EPSG:4326"}
+                feats = get(WFS_URL, params=params, timeout=300).json().get("features", [])
+                geoms += [shape(f["geometry"]) for f in feats if f.get("geometry")]
+                log(f"  WFS aire>{seuil:g} {unite} : +{len(feats)} (total {len(geoms)})")
+                if len(feats) < 5000 or debut >= 300000:
+                    break
+                debut += 5000
+            if geoms:
+                # GeoJSON en lon/lat ; si le serveur renvoie lat/lon, on rétablit l'ordre
+                g = gpd.GeoSeries(geoms, crs=4326)
+                b = g.total_bounds
+                if b[1] < -30 or b[3] > 75 or (b[0] > 35 and b[2] > 35):
+                    from shapely.ops import transform
+                    g = gpd.GeoSeries([transform(lambda x, y, z=None: (y, x), q) for q in geoms], crs=4326)
+                return g.to_crs(3035), f"IGN BD TOPO, surfaces de plus de {seuil_m2 / 1e4:.0f} ha"
+    except Exception as e:  # noqa: BLE001
+        log(f"  WFS grandes surfaces en échec : {e}")
+    return None, None
+
+
+def fond_france(cells, deps, avec_hydro=True):
+    from rasterio import features
+    from rasterio.transform import from_origin
+
+    metro = deps[~deps["code"].str.startswith("97")]
+    bx0, by0, bx1, by1 = metro.total_bounds
+    x0 = int(min(bx0, cells["x"].min()) // CELL) * CELL - MARGE * CELL
+    y0 = int(min(by0, cells["y"].min()) // CELL) * CELL - MARGE * CELL
+    nx = int((max(bx1, cells["x"].max() + CELL) - x0) // CELL) + 1 + MARGE
+    ny = int((max(by1, cells["y"].max() + CELL) - y0) // CELL) + 1 + MARGE
+    log(f"Grille de fond France : {nx} x {ny} carreaux")
+    f = 10  # sous-échantillonnage : pixels de 100 m
+    tr = from_origin(x0, y0 + ny * CELL, CELL / f, CELL / f)
+    forme = (ny * f, nx * f)
+
+    def part(geoms):
+        r = features.rasterize([(g, 1) for g in geoms if g is not None and not g.is_empty],
+                               out_shape=forme, transform=tr, fill=0, dtype="uint8")
+        # moyenne par blocs de 10 x 10, puis retournement : ligne 0 = sud
+        return r.reshape(ny, f, nx, f).mean(axis=(1, 3))[::-1]
+
+    terre = part(list(metro.geometry))
+    eau_int = np.zeros_like(terre)
+    source = "aucune (mer seulement)"
+    if avec_hydro:
+        g, src = hydro_wfs_grandes()
+        if g is not None:
+            eau_int = part(list(g.buffer(0)))
+            source = src
+    eau = np.clip((1 - terre) + np.minimum(eau_int, terre), 0, 1)
+    return {
+        "x0": x0, "y0": y0, "nx": nx, "ny": ny,
+        "eau": "".join(str(v) for v in np.rint(eau * 9).astype(int).ravel()),
+        "dept": "".join("1" if v >= 0.5 else "0" for v in terre.ravel()),
+        "source_eau": source,
+    }
+
+
+def construire_france(df, deps, avec_hydro):
+    geo = next(c for c in df.columns if "cog" in c or "depcom" in c)
+    codes = df[geo].fillna("").str.replace(r"[^0-9A-Za-z]", "", regex=True)
+    cells = df[~codes.str.startswith("97")].copy()
+    m = cells["idcar_1km"].str.extract(r"N(\d+)E(\d+)")
+    cells["y"], cells["x"] = m[0].astype(int), m[1].astype(int)
+    for c in [c for c in cells.columns if c not in ("idcar_1km", geo)]:
+        cells[c] = pd.to_numeric(cells[c].astype(str).str.replace(",", ".", regex=False), errors="coerce")
+    presents = [c for c in LOG_COLS if c in cells.columns]
+    cells["logements"] = cells[presents].sum(axis=1) if presents else cells["men"]
+    cells = cells[cells["logements"] > 0]
+    tot = {"n": int(len(cells)), "log": float(cells["logements"].sum()), "ind": float(cells["ind"].sum())}
+    log(f"France métropolitaine : {tot['n']} carreaux habités, {tot['log']:.0f} logements, {tot['ind']:.0f} individus")
+    fond = fond_france(cells, deps, avec_hydro)
+    garde = cells[cells["logements"] >= 100]
+    log(f"  {len(garde)} carreaux à 1 logement/ha ou plus")
+    cols = [c for c in ["logements", "men", "ind", "i_est_1km", "men_mais", "men_surf"] if c in garde.columns]
+    lignes = []
+    for r in garde[["x", "y"] + cols].itertuples(index=False):
+        lignes.append([(int(r[0]) - fond["x0"]) // CELL, (int(r[1]) - fond["y0"]) // CELL]
+                      + [None if pd.isna(v) else round(float(v), 1) for v in r[2:]])
+    from pyproj import Transformer
+    t = Transformer.from_crs(4326, 3035, always_xy=True)
+    villes = [[n, *[round(v) for v in t.transform(lo, la)]] for n, (la, lo) in VILLES_FR.items()]
+    sortie = {
+        "meta": {"dept": "fr", "nom": "France métropolitaine", "maille_m": CELL, "crs": "EPSG:3035",
+                 "source": "Insee, Filosofi 2021, carreaux de 1 km", "source_eau": fond.pop("source_eau"),
+                 "genere_le": date.today().isoformat(), "totaux": tot, "seuil_charge": 100, "villes": villes},
+        "fond": fond, "colonnes": ["ix", "iy"] + cols, "carreaux": lignes,
+    }
+    cible = ROOT / "docs" / "data" / "fr.json"
+    cible.parent.mkdir(parents=True, exist_ok=True)
+    cible.write_text(json.dumps(sortie, separators=(",", ":")))
+    log(f"Écrit {cible} ({cible.stat().st_size / 1e6:.2f} Mo), eau : {sortie['meta']['source_eau']}")
+
+
 # ---------------------------------------------------------------- sortie
 def main():
     ap = argparse.ArgumentParser()
@@ -255,9 +376,13 @@ def main():
     ap.add_argument("--filosofi")
     ap.add_argument("--deps")
     ap.add_argument("--no-hydro", action="store_true")
+    ap.add_argument("--france", action="store_true", help="France métropolitaine entière")
     a = ap.parse_args()
 
     df = lire_filosofi(a.filosofi)
+    if a.france:
+        construire_france(df, charger_deps(a.deps), not a.no_hydro)
+        return
     cells, geo = filtrer_dept(df, a.dept)
     if cells.empty:
         sys.exit(f"Aucun carreau trouvé pour le département {a.dept}")

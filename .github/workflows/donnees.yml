@@ -22,6 +22,7 @@ jobs:
           python-version: "3.12"
       - run: pip install -q -r scripts/requirements.txt
       - run: python scripts/build.py --dept "${{ github.event.inputs.dept || '44' }}"
+      - run: python scripts/build.py --france
       - name: Enregistrer les données
         run: |
           git config user.name "github-actions[bot]"
