@@ -1,0 +1,81 @@
+{
+ "config": {
+  "usages": {
+   "boulangerie": {
+    "libelle": "Boulangerie",
+    "types": [
+     "B207"
+    ]
+   },
+   "epicerie": {
+    "libelle": "Épicerie, supérette",
+    "types": [
+     "B201",
+     "B202"
+    ]
+   },
+   "courses": {
+    "libelle": "Supermarché, hypermarché",
+    "types": [
+     "B105",
+     "B104"
+    ]
+   },
+   "ecole": {
+    "libelle": "École",
+    "types": [
+     "C107",
+     "C108",
+     "C109"
+    ]
+   },
+   "college": {
+    "libelle": "Collège",
+    "types": [
+     "C201"
+    ]
+   },
+   "lycee": {
+    "libelle": "Lycée",
+    "types": [
+     "C301",
+     "C302",
+     "C304",
+     "C305"
+    ]
+   },
+   "pharmacie": {
+    "libelle": "Pharmacie",
+    "types": [
+     "D307"
+    ]
+   },
+   "urgences": {
+    "libelle": "Urgences",
+    "types": [
+     "D106"
+    ]
+   },
+   "gare": {
+    "libelle": "Gare de voyageurs",
+    "types": [
+     "E107",
+     "E108",
+     "E109"
+    ]
+   },
+   "poste": {
+    "libelle": "Poste ou France services",
+    "types": [
+     "A206",
+     "A207",
+     "A208",
+     "A128"
+    ]
+   }
+  },
+  "millesime": "2025"
+ },
+ "carreaux": 370084,
+ "source": "Insee, accès aux équipements 2025 (BPE, distancier Metric-OSRM)"
+}
