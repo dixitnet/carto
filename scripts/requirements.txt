@@ -7,3 +7,4 @@ requests
 py7zr
 rasterio
 openpyxl
+duckdb
