@@ -21,6 +21,13 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -q -r scripts/requirements.txt
+      - name: Référentiels
+        run: |
+          python scripts/refs.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/ref
+          git diff --cached --quiet || (git commit -m "Référentiels : gammes BPE 2025" && git pull --rebase origin main && git push)
       - run: python scripts/build.py --dept "${{ github.event.inputs.dept || '44' }}"
       - run: python scripts/build.py --france
       - name: Enregistrer les données

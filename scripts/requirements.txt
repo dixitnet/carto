@@ -6,3 +6,4 @@ pyproj
 requests
 py7zr
 rasterio
+openpyxl
