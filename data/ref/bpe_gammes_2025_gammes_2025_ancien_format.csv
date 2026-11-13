@@ -1,0 +1,211 @@
+Base Permanente des Équipements,,,,,,,
+Année 2025,,,,,,,
+Composition des gammes d'équipements (format : 1 ligne = 1 type d’équipement ou 1 regroupement spécifique pour les gammes),,,,,,,
+Type d’équipement ou regroupement,1er type d’équipement inclus dans le regroupement,2ème type d’équipement inclus dans le regroupement,3ème type d’équipement inclus dans le regroupement,Libellé du type d’équipement ou du regroupement,GAMME ,Domaine,Libellé domaine
+TYPEQU_REGROUPEMENT,REGROUPEMENT1,REGROUPEMENT2,REGROUPEMENT3,LIBELLE_TYPEQU_REGROUPEMENT,GAMME ,DOM,LIBELLE_DOM
+A105,,,,COUR D’APPEL,Hors Gamme,A,Services pour les particuliers
+A108,,,,CONSEIL DE PRUD’HOMMES,Hors Gamme,A,Services pour les particuliers
+A109,,,,TRIBUNAL DE COMMERCE,Hors Gamme,A,Services pour les particuliers
+A122,,,,RÉSEAU DE PROXIMITÉ FRANCE TRAVAIL,Gamme supérieure,A,Services pour les particuliers
+A124,,,,MAISON DE JUSTICE ET DU DROIT,Hors Gamme,A,Services pour les particuliers
+A125,,,,ANTENNE DE JUSTICE,Hors Gamme,A,Services pour les particuliers
+A126,,,,CONSEIL DÉPARTEMENTAL D’ACCÈS AU DROIT,Hors Gamme,A,Services pour les particuliers
+A128,,,,FRANCE SERVICES,Gamme intermédiaire,A,Services pour les particuliers
+A130,,,,BUREAU D’AIDE JURIDICTIONNELLE,Hors Gamme,A,Services pour les particuliers
+A131,,,,TRIBUNAL JUDICIAIRE,Hors Gamme,A,Services pour les particuliers
+A132,,,,TRIBUNAL DE PROXIMITÉ,Hors Gamme,A,Services pour les particuliers
+A133,,,,DÉCHETTERIE,Gamme intermédiaire,A,Services pour les particuliers
+A134,,,,COUR CRIMINELLE DÉPARTEMENTALE,Hors Gamme,A,Services pour les particuliers
+A135,,,,COUR D'ASSISES,Hors Gamme,A,Services pour les particuliers
+A136,,,,JURIDICTION ADMINISTRATIVE,Hors Gamme,A,Services pour les particuliers
+A137,,,,TRIBUNAL CORRECTIONNEL,Hors Gamme,A,Services pour les particuliers
+A138,,,,TRIBUNAL DE POLICE,Hors Gamme,A,Services pour les particuliers
+A139,,,,TRIBUNAL POUR ENFANTS,Hors Gamme,A,Services pour les particuliers
+A203,,,,"BANQUE, CAISSE D’ÉPARGNE",Gamme intermédiaire,A,Services pour les particuliers
+A205,,,,SERVICES FUNÉRAIRES,Gamme intermédiaire,A,Services pour les particuliers
+A301,,,,RÉPARATION AUTOMOBILE ET DE MATÉRIEL AGRICOLE,Gamme de proximité,A,Services pour les particuliers
+A302,,,,CONTRÔLE TECHNIQUE AUTOMOBILE,Gamme intermédiaire,A,Services pour les particuliers
+A303,,,,LOCATION AUTO-UTILITAIRES LÉGERS,Gamme intermédiaire,A,Services pour les particuliers
+A304,,,,ÉCOLE DE CONDUITE,Gamme intermédiaire,A,Services pour les particuliers
+A401,,,,MAÇON,Gamme de proximité,A,Services pour les particuliers
+A402,,,,PLÂTRIER PEINTRE,Gamme de proximité,A,Services pour les particuliers
+A403,,,,MENUISIER CHARPENTIER SERRURIER,Gamme de proximité,A,Services pour les particuliers
+A404,,,,PLOMBIER COUVREUR CHAUFFAGISTE,Gamme de proximité,A,Services pour les particuliers
+A405,,,,ÉLECTRICIEN,Gamme de proximité,A,Services pour les particuliers
+A406,,,,ENTREPRISE GÉNÉRALE DU BÂTIMENT,Gamme intermédiaire,A,Services pour les particuliers
+A501,,,,COIFFURE,Gamme de proximité,A,Services pour les particuliers
+A502,,,,VÉTÉRINAIRE,Gamme intermédiaire,A,Services pour les particuliers
+A503,,,,AGENCE DE TRAVAIL TEMPORAIRE,Gamme supérieure,A,Services pour les particuliers
+A504,,,,RESTAURANT- RESTAURATION RAPIDE,Gamme de proximité,A,Services pour les particuliers
+A505,,,,AGENCE IMMOBILIÈRE,Gamme de proximité,A,Services pour les particuliers
+A506,,,,PRESSING-LAVERIE AUTOMATIQUE,Gamme intermédiaire,A,Services pour les particuliers
+A507,,,,INSTITUT DE BEAUTÉ-ONGLERIE,Gamme de proximité,A,Services pour les particuliers
+AR01,A104,A140,,"GENDARMERIE, POLICE",Gamme intermédiaire,A,Services pour les particuliers
+AR02,A120,A121,,"DIRECTION RÉGIONALE DES FINANCES PUBLIQUES, DIRECTION DÉPARTEMENTALE DES FINANCES PUBLIQUES",Gamme supérieure,A,Services pour les particuliers
+AR03,A206,A207,A208,"BUREAU DE POSTE, RELAIS POSTE, AGENCE POSTALE",Gamme de proximité,A,Services pour les particuliers
+B104,,,,HYPERMARCHÉ ET GRAND MAGASIN,Gamme supérieure,B,Commerces
+B105,,,,SUPERMARCHÉ ET MAGASIN MULTI-COMMERCE,Gamme intermédiaire,B,Commerces
+B204,,,,BOUCHERIE CHARCUTERIE,Gamme intermédiaire,B,Commerces
+B205,,,,PRODUITS SURGELÉS,Gamme supérieure,B,Commerces
+B206,,,,POISSONNERIE,Gamme supérieure,B,Commerces
+B207,,,,BOULANGERIE-PÂTISSERIE,Gamme de proximité,B,Commerces
+B208,,,,COMMERCE SPÉCIALISÉ EN FRUITS ET LÉGUMES,Gamme intermédiaire,B,Commerces
+B209,,,,COMMERCE DE BOISSONS,Gamme intermédiaire,B,Commerces
+B210,,,,AUTRES COMMERCES ALIMENTAIRES,Gamme intermédiaire,B,Commerces
+B302,,,,MAGASIN DE VÊTEMENTS,Gamme intermédiaire,B,Commerces
+B303,,,,MAGASIN D’ÉQUIPEMENTS DU FOYER,Gamme intermédiaire,B,Commerces
+B304,,,,MAGASIN DE CHAUSSURES,Gamme supérieure,B,Commerces
+B306,,,,MAGASIN DE MEUBLES,Gamme intermédiaire,B,Commerces
+B307,,,,MAGASIN D’ARTICLES DE SPORTS ET DE LOISIRS,Gamme intermédiaire,B,Commerces
+B308,,,,MAGASIN DE REVÊTEMENTS MURS ET SOLS,Hors Gamme,B,Commerces
+B310,,,,PARFUMERIE-COSMÉTIQUE,Gamme supérieure,B,Commerces
+B311,,,,HORLOGERIE-BIJOUTERIE,Gamme supérieure,B,Commerces
+B312,,,,FLEURISTE-JARDINERIE-ANIMALERIE,Gamme intermédiaire,B,Commerces
+B313,,,,MAGASIN D’OPTIQUE,Gamme intermédiaire,B,Commerces
+B315,,,,MAGASIN DE MATÉRIEL MÉDICAL ET ORTHOPÉDIQUE,Gamme intermédiaire,B,Commerces
+B316,,,,STATION-SERVICE,Gamme intermédiaire,B,Commerces
+B317,,,,COMMERCE DE TISSUS ET MERCERIE,Gamme supérieure,B,Commerces
+B318,,,,COMMERCE DE JEUX ET JOUETS,Gamme supérieure,B,Commerces
+B319,,,,MAROQUINERIE ET ARTICLES DE VOYAGE,Gamme supérieure,B,Commerces
+B320,,,,COMMERCE DE COMBUSTIBLES DOMESTIQUES,Gamme supérieure,B,Commerces
+B321,,,,"MAGASIN ÉLECTROMÉNAGER, MATÉRIEL AUDIO VIDÉO INFORMATIQUE",Gamme intermédiaire,B,Commerces
+B322,,,,MAGASIN DE MATÉRIELS DE TÉLÉCOMMUNICATION,Gamme supérieure,B,Commerces
+B323,,,,COMMERCE DE BIENS D’OCCASION,Gamme intermédiaire,B,Commerces
+B324,,,,LIBRAIRIE,Gamme supérieure,B,Commerces
+B325,,,,PAPETERIE ET PRESSE,Gamme intermédiaire,B,Commerces
+B326,,,,STATION DE RECHARGE DE VÉHICULES ÉLECTRIQUES,Gamme de proximité,B,Commerces
+BR01,B201,B202,,"SUPÉRETTE, ÉPICERIE",Gamme de proximité,B,Commerces
+BR02,B103,B309,,"GRANDE SURFACE DE BRICOLAGE, DROGUERIE QUINCAILLERIE BRICOLAGE",Gamme intermédiaire,B,Commerces
+C201,,,,COLLÈGE,Gamme intermédiaire,C,Enseignement
+C303,,,,LYCÉE D’ENSEIGNEMENT TECHNIQUE ET/OU PROFESSIONNEL AGRICOLE,Hors Gamme,C,Enseignement
+C401,,,,"STS SECTION TECHNICIEN SUPÉRIEUR, CPGE CLASSE PRÉPARATOIRE AUX GRANDES ÉCOLES",Hors Gamme,C,Enseignement
+C403,,,,FORMATION COMMERCE,Hors Gamme,C,Enseignement
+C409,,,,AUTRE FORMATION POST BAC NON UNIVERSITAIRE,Hors Gamme,C,Enseignement
+C410,,,,ÉCOLE DE FORMATION AUX PROFESSIONS SANITAIRES ET SOCIALES,Gamme supérieure,C,Enseignement
+C411,,,,ÉCOLE DE FORMATION AUX MÉTIERS DE LA CULTURE,Hors Gamme,C,Enseignement
+C501,,,,UFR,Hors Gamme,C,Enseignement
+C502,,,,INSTITUT UNIVERSITAIRE,Hors Gamme,C,Enseignement
+C503,,,,ÉCOLE D’INGÉNIEURS,Hors Gamme,C,Enseignement
+C504,,,,ENSEIGNEMENT GÉNÉRAL SUPÉRIEUR PRIVÉ,Hors Gamme,C,Enseignement
+C505,,,,ÉCOLE D’ENSEIGNEMENT SUPÉRIEUR AGRICOLE,Hors Gamme,C,Enseignement
+C509,,,,AUTRE ENSEIGNEMENT SUPÉRIEUR,Hors Gamme,C,Enseignement
+C602,,,,GRETA,Hors Gamme,C,Enseignement
+C603,,,,CENTRE DISPENSANT DE LA FORMATION CONTINUE AGRICOLE,Hors Gamme,C,Enseignement
+C604,,,,FORMATION AUX MÉTIERS DU SPORT,Hors Gamme,C,Enseignement
+C610,,,,ORGANISME DE FORMATION EN APPRENTISSAGE,Gamme supérieure,C,Enseignement
+C701,,,,RÉSIDENCE UNIVERSITAIRE,Hors Gamme,C,Enseignement
+C702,,,,RESTAURANT UNIVERSITAIRE,Hors Gamme,C,Enseignement
+CR01,C107,C108,C109,"ÉCOLE MATERNELLE, ÉCOLE PRIMAIRE, ÉCOLE ÉLÉMENTAIRE",Gamme de proximité,C,Enseignement
+CR03,C301,C304,,"LYCÉE D’ENSEIGNEMENT GÉNÉRAL ET/OU TECHNOLOGIQUE, SGT SECTION D’ENSEIGNEMENT GÉNÉRAL ET TECHNOLOGIQUE",Gamme supérieure,C,Enseignement
+CR04,C302,C305,,"LYCÉE D’ENSEIGNEMENT PROFESSIONNEL, SEP SECTION D’ENSEIGNEMENT PROFESSIONNEL",Gamme supérieure,C,Enseignement
+D101,,,,ÉTABLISSEMENT DE SOINS DE COURTE DURÉE,Gamme supérieure,D,Santé et action sociale
+D102,,,,ÉTABLISSEMENT DE SOINS DE SUITE ET DE RÉADAPTATION,Gamme supérieure,D,Santé et action sociale
+D103,,,,ÉTABLISSEMENT DE SOINS DE LONGUE DURÉE,Gamme supérieure,D,Santé et action sociale
+D104,,,,ÉTABLISSEMENT PSYCHIATRIQUE,Gamme supérieure,D,Santé et action sociale
+D105,,,,CENTRE DE LUTTE CONTRE LE CANCER,Hors Gamme,D,Santé et action sociale
+D106,,,,URGENCES,Gamme supérieure,D,Santé et action sociale
+D107,,,,MATERNITÉ,Hors Gamme,D,Santé et action sociale
+D108,,,,CENTRE DE SANTÉ,Gamme supérieure,D,Santé et action sociale
+D109,,,,STRUCTURE PSYCHIATRIQUE EN AMBULATOIRE,Gamme supérieure,D,Santé et action sociale
+D110,,,,CENTRE DE MÉDECINE PRÉVENTIVE,Hors Gamme,D,Santé et action sociale
+D111,,,,DIALYSE,Gamme supérieure,D,Santé et action sociale
+D112,,,,HOSPITALISATION À DOMICILE,Hors Gamme,D,Santé et action sociale
+D113,,,,MAISON DE SANTÉ PLURIDISCIPLINAIRE,Gamme intermédiaire,D,Santé et action sociale
+D114,,,,SERVICE DE PRISE EN CHARGE DES ADDICTIONS,Hors Gamme,D,Santé et action sociale
+D115,,,,SERVICES DE SANTÉ MATERNELLE ET INFANTILE,Gamme supérieure,D,Santé et action sociale
+D245,,,,PROFESSIONNELS DE L’APPAREILLAGE,Hors Gamme,D,Santé et action sociale
+D246,,,,AUDIOPROTHÉSISTE,Gamme supérieure,D,Santé et action sociale
+D247,,,,ERGOTHÉRAPEUTE,Gamme supérieure,D,Santé et action sociale
+D248,,,,PSYCHOMOTRICIEN,Gamme supérieure,D,Santé et action sociale
+D249,,,,DIÉTÉTICIEN,Gamme intermédiaire,D,Santé et action sociale
+D250,,,,PSYCHOLOGUE,Gamme intermédiaire,D,Santé et action sociale
+D251,,,,ALLERGOLOGUE,Hors Gamme,D,Santé et action sociale
+D252,,,,ANESTHÉSISTE-RÉANIMATEUR,Hors Gamme,D,Santé et action sociale
+D253,,,,SPÉCIALISTE EN CHIRURGIE GÉNÉRALE,Hors Gamme,D,Santé et action sociale
+D254,,,,"SPÉCIALISTE EN CHIRURGIE ORTHOPÉDIQUE, PLASTIQUE ET TRAUMATOLOGIQUE",Gamme supérieure,D,Santé et action sociale
+D255,,,,ENDOCRINOLOGUE,Hors Gamme,D,Santé et action sociale
+D256,,,,GÉRIATRE,Hors Gamme,D,Santé et action sociale
+D257,,,,HÉMATOLOGUE,Hors Gamme,D,Santé et action sociale
+D258,,,,SPÉCIALISTE EN MÉDECINE PHYSIQUE ET DE RÉADAPTATION,Hors Gamme,D,Santé et action sociale
+D259,,,,NEUROLOGUE,Hors Gamme,D,Santé et action sociale
+D260,,,,"SPÉCIALISTE EN ONCOLOGIE, ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",Hors Gamme,D,Santé et action sociale
+D261,,,,RHUMATOLOGUE,Hors Gamme,D,Santé et action sociale
+D262,,,,"UROLOGUE, NÉPHROLOGUE",Hors Gamme,D,Santé et action sociale
+D265,,,,MÉDECIN GÉNÉRALISTE,Gamme de proximité,D,Santé et action sociale
+D266,,,,SPÉCIALISTE EN CARDIOLOGIE,Gamme supérieure,D,Santé et action sociale
+D267,,,,SPÉCIALISTE EN DERMATOLOGIE VÉNÉRÉOLOGIE,Gamme supérieure,D,Santé et action sociale
+D268,,,,SPÉCIALISTE EN GASTRO-ENTÉROLOGIE HÉPATOLOGIE,Gamme supérieure,D,Santé et action sociale
+D269,,,,SPÉCIALISTE EN PSYCHIATRIE,Gamme supérieure,D,Santé et action sociale
+D270,,,,SPÉCIALISTE EN OPHTALMOLOGIE,Gamme supérieure,D,Santé et action sociale
+D271,,,,SPÉCIALISTE EN OTO-RHINO-LARYNGOLOGIE,Gamme supérieure,D,Santé et action sociale
+D272,,,,SPÉCIALISTE EN PÉDIATRIE,Gamme supérieure,D,Santé et action sociale
+D273,,,,SPÉCIALISTE EN PNEUMOLOGIE,Hors Gamme,D,Santé et action sociale
+D274,,,,SPÉCIALISTE EN RADIODIAGNOSTIC ET IMAGERIE MÉDICALE,Gamme supérieure,D,Santé et action sociale
+D275,,,,SPÉCIALISTE EN STOMATOLOGIE,Hors Gamme,D,Santé et action sociale
+D276,,,,SPÉCIALISTE EN GYNÉCOLOGIE MÉDICALE ET/OU OBSTÉTRIQUE,Gamme supérieure,D,Santé et action sociale
+D277,,,,CHIRURGIEN DENTISTE,Gamme intermédiaire,D,Santé et action sociale
+D278,,,,SAGE-FEMME,Gamme intermédiaire,D,Santé et action sociale
+D279,,,,MASSEUR KINÉSITHÉRAPEUTE,Gamme de proximité,D,Santé et action sociale
+D280,,,,PÉDICURE-PODOLOGUE,Gamme intermédiaire,D,Santé et action sociale
+D281,,,,INFIRMIER,Gamme de proximité,D,Santé et action sociale
+D282,,,,ORTHOPHONISTE,Gamme intermédiaire,D,Santé et action sociale
+D283,,,,ORTHOPTISTE,Gamme supérieure,D,Santé et action sociale
+D302,,,,LABORATOIRE D ANALYSES ET DE BIOLOGIE MÉDICALE,Gamme intermédiaire,D,Santé et action sociale
+D303,,,,AMBULANCE,Gamme intermédiaire,D,Santé et action sociale
+D304,,,,TRANSFUSION SANGUINE,Hors Gamme,D,Santé et action sociale
+D305,,,,ÉTABLISSEMENT THERMAL,Hors Gamme,D,Santé et action sociale
+D307,,,,PHARMACIE,Gamme de proximité,D,Santé et action sociale
+D401,,,,PERSONNES ÂGÉES : HÉBERGEMENT,Gamme intermédiaire,D,Santé et action sociale
+D402,,,,PERSONNES ÂGÉES : SOINS À DOMICILE,Gamme supérieure,D,Santé et action sociale
+D403,,,,PERSONNES ÂGÉES : SERVICES D’AIDE,Gamme intermédiaire,D,Santé et action sociale
+D502,,,,ÉTABLISSEMENT D’ACCUEIL DU JEUNE ENFANT,Gamme intermédiaire,D,Santé et action sociale
+D503,,,,LIEUX D'ACCUEIL ENFANT-PARENT,Gamme supérieure,D,Santé et action sociale
+D504,,,,RELAIS PETITE ENFANCE,Gamme intermédiaire,D,Santé et action sociale
+D505,,,,ACCUEIL DE LOISIR SANS HÉBERGEMENT,Gamme de proximité,D,Santé et action sociale
+D506,,,,CENTRES SOCIAUX,Gamme supérieure,D,Santé et action sociale
+D507,,,,MÉDIATION FAMILIALE,Hors Gamme,D,Santé et action sociale
+D508,,,,ESPACES DE VIE SOCIALE,Gamme supérieure,D,Santé et action sociale
+D509,,,,MICRO-CRÈCHE,Gamme intermédiaire,D,Santé et action sociale
+D601,,,,ENFANTS HANDICAPÉS : HÉBERGEMENT,Gamme supérieure,D,Santé et action sociale
+D602,,,,ENFANTS HANDICAPÉS : SERVICES À DOMICILE OU AMBULATOIRES,Gamme supérieure,D,Santé et action sociale
+D603,,,,ADULTES HANDICAPÉS : ACCUEIL/HÉBERGEMENT,Gamme supérieure,D,Santé et action sociale
+D604,,,,ADULTES HANDICAPÉS : SERVICES D’AIDE,Gamme intermédiaire,D,Santé et action sociale
+D605,,,,TRAVAIL PROTÉGÉ,Gamme supérieure,D,Santé et action sociale
+D606,,,,ADULTES HANDICAPÉS : SERVICES DE SOINS À DOMICILE,Gamme supérieure,D,Santé et action sociale
+D607,,,,SERVICE D’AIDE AUX DÉFICIENTS VISUELS OU AUDITIFS,Hors Gamme,D,Santé et action sociale
+D701,,,,PROTECTION DE L’ENFANCE : HÉBERGEMENT,Gamme supérieure,D,Santé et action sociale
+D702,,,,PROTECTION DE L’ENFANCE : ACTION ÉDUCATIVE,Hors Gamme,D,Santé et action sociale
+D703,,,,CENTRE D’HÉBERGEMENT ET DE RÉINSERTION SOCIALE,Hors Gamme,D,Santé et action sociale
+D704,,,,CENTRE PROVISOIRE D’HÉBERGEMENT,Hors Gamme,D,Santé et action sociale
+D705,,,,CENTRE D'ACCUEIL DE DEMANDEURS D’ASILE,Hors Gamme,D,Santé et action sociale
+D710,,,,AUTRES HÉBERGEMENTS POUR ADULTES ET FAMILLES EN DIFFICULTÉ,Gamme supérieure,D,Santé et action sociale
+D711,,,,SERVICE D’AIDE AUX FEMMES EN SITUATION DE VULNÉRABILITÉ,Hors Gamme,D,Santé et action sociale
+E101,,,,TAXI-VTC,Gamme de proximité,E,Transports et déplacements
+E102,,,,AÉROPORT,Hors Gamme,E,Transports et déplacements
+ER01,E107,E108,E109,"GARE DE VOYAGEURS D’INTÉRÊT NATIONAL, RÉGIONAL ET LOCAL",Gamme supérieure,E,Transports et déplacements
+F101,,,,BASSIN DE NATATION,Gamme intermédiaire,F,"Sports, loisirs et culture"
+F102,,,,BOULODROME,Gamme de proximité,F,"Sports, loisirs et culture"
+F103,,,,TENNIS,Gamme de proximité,F,"Sports, loisirs et culture"
+F107,,,,ATHLÉTISME,Gamme intermédiaire,F,"Sports, loisirs et culture"
+F108,,,,TERRAIN DE GOLF,Hors Gamme,F,"Sports, loisirs et culture"
+F109,,,,PARCOURS SPORTIF/SANTÉ,Gamme supérieure,F,"Sports, loisirs et culture"
+F110,,,,SPORTS DE GLACE,Hors Gamme,F,"Sports, loisirs et culture"
+F113,,,,TERRAINS DE GRANDS JEUX,Gamme de proximité,F,"Sports, loisirs et culture"
+F119,,,,BOWLING,Hors Gamme,F,"Sports, loisirs et culture"
+F122,,,,CIRCUIT / PISTE DE SPORTS MÉCANIQUES,Hors Gamme,F,"Sports, loisirs et culture"
+F124,,,,PAS DE TIR,Gamme supérieure,F,"Sports, loisirs et culture"
+F125,,,,SITE D'ACTIVITÉS AÉRIENNES,Hors Gamme,F,"Sports, loisirs et culture"
+F126,,,,SITE DE MODÉLISME,Hors Gamme,F,"Sports, loisirs et culture"
+F127,,,,STRUCTURE ARTIFICIELLE D’ESCALADE,Gamme supérieure,F,"Sports, loisirs et culture"
+F128,,,,ÉQUIPEMENTS DE CYCLISME,Hors Gamme,F,"Sports, loisirs et culture"
+F130,,,,SKATEPARK & VÉLO-FREESTYLE,Gamme intermédiaire,F,"Sports, loisirs et culture"
+F204,,,,ÉQUIPEMENTS DE SPORTS DE NATURE,Hors Gamme,F,"Sports, loisirs et culture"
+F303,,,,CINÉMA,Gamme supérieure,F,"Sports, loisirs et culture"
+F305,,,,CONSERVATOIRE,Hors Gamme,F,"Sports, loisirs et culture"
+F307,,,,BIBLIOTHÈQUE,Gamme de proximité,F,"Sports, loisirs et culture"
+F312,,,,EXPOSITION ET MÉDIATION CULTURELLE,Gamme supérieure,F,"Sports, loisirs et culture"
+F313,,,,ESPACE REMARQUABLE ET PATRIMOINE,Hors Gamme,F,"Sports, loisirs et culture"
+F314,,,,ARCHIVES,Gamme supérieure,F,"Sports, loisirs et culture"
+F315,,,,ARTS DU SPECTACLE,Gamme supérieure,F,"Sports, loisirs et culture"
+FR01,F111,F116,F121,"PLATEAUX ET TERRAINS DE JEUX EXTÉRIEURS, SALLES NON SPÉCIALISÉES, SALLES MULTISPORTS, GYMNASES",Gamme de proximité,F,"Sports, loisirs et culture"
+FR02,F114,F120,F129,"SALLES DE COMBAT, SALLES DE REMISE EN FORME, SALLES SPÉCIALISÉES",Gamme intermédiaire,F,"Sports, loisirs et culture"
