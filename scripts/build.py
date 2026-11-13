@@ -249,6 +249,18 @@ def fond_de_plan(cells, deps, dept, avec_hydro=True):
     }
 
 
+def joindre_acces(cells):
+    """Ajoute l'éloignement aux services (data/acces_1km.parquet) et renvoie (cells, colonnes, libellés)."""
+    f = ROOT / "data" / "acces_1km.parquet"
+    if not f.exists():
+        return cells, [], None
+    acc = pd.read_parquet(f).drop(columns=["pop_acces"], errors="ignore")
+    cols = [c for c in acc.columns if c not in ("x", "y")]
+    usages = json.loads((ROOT / "scripts" / "usages.json").read_text())
+    log(f"  éloignement aux services : {len(cols)} colonnes jointes")
+    return cells.merge(acc, on=["x", "y"], how="left"), cols, {k: v["libelle"] for k, v in usages.items()}
+
+
 # ---------------------------------------------------------------- France entière
 VILLES_FR = {"Paris": (48.8566, 2.3522), "Lyon": (45.764, 4.8357), "Marseille": (43.2965, 5.3698),
              "Toulouse": (43.6047, 1.4442), "Bordeaux": (44.8378, -0.5792), "Nantes": (47.2184, -1.5536),
@@ -412,7 +424,8 @@ def construire_france(df, deps, avec_hydro, pays_local=None):
     fond = fond_france(cells, deps, avec_hydro, pays_local)
     garde = cells[cells["logements"] >= 100]
     log(f"  {len(garde)} carreaux à 1 logement/ha ou plus")
-    cols = [c for c in ["logements", "men", "ind", "i_est_1km", "men_mais", "men_surf"] if c in garde.columns]
+    garde, cols_acces, usages = joindre_acces(garde)
+    cols = [c for c in ["logements", "men", "ind", "i_est_1km", "men_mais", "men_surf"] if c in garde.columns] + cols_acces
     lignes = []
     for r in garde[["x", "y"] + cols].itertuples(index=False):
         lignes.append([(int(r[0]) - fond["x0"]) // CELL, (int(r[1]) - fond["y0"]) // CELL]
@@ -423,7 +436,8 @@ def construire_france(df, deps, avec_hydro, pays_local=None):
     sortie = {
         "meta": {"dept": "fr", "nom": "France métropolitaine", "maille_m": CELL, "crs": "EPSG:3035",
                  "source": "Insee, Filosofi 2021, carreaux de 1 km", "source_eau": fond.pop("source_eau"),
-                 "genere_le": date.today().isoformat(), "totaux": tot, "seuil_charge": 100, "villes": villes},
+                 "genere_le": date.today().isoformat(), "totaux": tot, "seuil_charge": 100, "villes": villes, "usages": usages,
+                 "source_acces": "Insee, accès aux équipements 2025 (BPE, distancier Metric-OSRM)" if usages else None},
         "fond": fond, "colonnes": ["ix", "iy"] + cols, "carreaux": lignes,
     }
     cible = ROOT / "docs" / "data" / "fr.json"
@@ -462,6 +476,7 @@ def main():
     cells.to_parquet(f"{base}.parquet", index=False)
 
     fond = fond_de_plan(cells, charger_deps(a.deps), a.dept, not a.no_hydro)
+    cells, _, usages = joindre_acces(cells)
 
     exclus = {"idcar_1km", geo, "x", "y"}
     cols = [c for c in cells.columns if c not in exclus]
@@ -478,7 +493,7 @@ def main():
             "dept": a.dept, "maille_m": CELL, "crs": "EPSG:3035",
             "source": "Insee, Filosofi 2021, carreaux de 1 km",
             "source_eau": fond.pop("source_eau"),
-            "genere_le": date.today().isoformat(),
+            "genere_le": date.today().isoformat(), "usages": usages,
             "definition_logements": "somme des logements par époque de construction (" + ", ".join(presents) + ")"
             if presents else "nombre de ménages fiscaux",
         },
