@@ -1,0 +1,16 @@
+name: Sonde
+on:
+  push:
+    branches: [main]
+    paths: ["scripts/sonde_*.py"]
+jobs:
+  sonde:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q duckdb requests
+      - run: python scripts/sonde_acces.py
